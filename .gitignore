@@ -1,1 +1,8 @@
+# Visual Studio
+*.vcxproj.user
+.vs/
+
+# Build folders
+build/bin/
+build/obj/
 stage/
