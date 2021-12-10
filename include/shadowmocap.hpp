@@ -44,6 +44,13 @@ public:
   std::vector<std::string> name_map;
 }; // class datastream
 
+/// Returns whether a binary message from the Shadow data service is metadata
+/// text in XML format and not measurement data.
+/**
+ * @param message Container of bytes.
+ *
+ * @return @c true if the message is an XML string, otherwise @c false.
+ */
 template <typename Message>
 bool is_metadata(const Message &message)
 {
@@ -61,6 +68,17 @@ bool is_metadata(const Message &message)
   return true;
 }
 
+/// Parse a metadata message from the Shadow data service and return a flat list
+/// of node string names.
+/**
+ * The Shadow data service will update the node name list at the beginning of
+ * every socket stream. Use the name list if you need string names for the
+ * subsequent measurement data.
+ *
+ * @param message Container of bytes that contains an XML string.
+ *
+ * @return List of node string names in the same order as measurement data.
+ */
 template <typename Message>
 std::vector<std::string> parse_metadata(const Message &message)
 {
@@ -79,6 +97,8 @@ std::vector<std::string> parse_metadata(const Message &message)
     return {};
   }
 
+  //
+  // <node id="A"/><node id="B/> -> ["A", "B"]
   std::vector<std::string> result(num_node);
 
   std::transform(first, last, std::begin(result), [](auto &match) {
