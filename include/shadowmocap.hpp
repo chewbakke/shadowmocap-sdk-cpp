@@ -40,7 +40,7 @@ public:
   {
   }
 
-  Protocol::socket socket;
+  typename Protocol::socket socket;
   std::vector<std::string> name_map;
 }; // class datastream
 

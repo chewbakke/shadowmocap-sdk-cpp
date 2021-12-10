@@ -38,7 +38,7 @@ read_shadowmocap_datastream(const typename Protocol::endpoint &endpoint)
   auto end = std::chrono::steady_clock::now();
 
   std::cout << "read 100 (" << num_bytes << " bytes) samples in "
-            << std::chrono::duration<double>(end - start) << "\n";
+            << std::chrono::duration<double>(end - start).count() << "\n";
 }
 
 bool run_tcp()
@@ -77,18 +77,18 @@ bool run_udp()
   return false;
 }
 
-/*
 TEST_CASE(
   "read 100 samples from the Shadow data service using a TCP socket",
   "[shadowmocap][tcp]")
 {
   REQUIRE(run_tcp());
 }
-*/
 
+/*
 TEST_CASE(
   "read 100 samples from the Shadow data service using a UDP socket",
   "[shadowmocap][udp]")
 {
   REQUIRE(run_udp());
 }
+*/
