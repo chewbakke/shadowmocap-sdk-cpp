@@ -126,7 +126,11 @@ read_shadowmocap_datastream(const EndpointSequence &endpoints)
 {
   using namespace shadowmocap;
 
-  auto stream = co_await open_connection<net::ip::udp::socket>(endpoints);
+  auto stream = co_await open_connection<net::ip::tcp::socket>(endpoints);
+
+  const std::string xml = "<configurable><Lq/></configurable>";
+  co_await write_message(stream, xml);
+
   for (;;) {
     auto message = co_await read_message<std::string>(stream);
   }

@@ -39,8 +39,10 @@ using net::ip::udp;
 template <typename Socket>
 class datastream {
 public:
+  explicit datastream(Socket socket) : socket(std::move(socket)) {}
+
   Socket socket;
-  std::vector<std::string> name_map;
+  // std::vector<std::string> name_map;
 }; // class datastream
 
 template <typename Message>
@@ -94,7 +96,7 @@ net::awaitable<Message> read_message(datastream<Socket> &stream)
 }
 
 template <typename Message, typename AsyncWriteStream>
-net::awaitable<void> write_message(AsyncWriteStream &s, const Message &message)
+net::awaitable<void> write_message_s(AsyncWriteStream &s, const Message &message)
 {
   static_assert(
     sizeof(typename Message::value_type) == sizeof(char),
@@ -105,16 +107,18 @@ net::awaitable<void> write_message(AsyncWriteStream &s, const Message &message)
     socket, net::buffer(&length, sizeof(length)), net::use_awaitable);
 
   co_await net::async_write(
-    socket, net::const_buffer(message), net::use_awaitable);
+    socket, net::buffer(message), net::use_awaitable);
 }
 
 template <typename Message, typename Socket>
 net::awaitable<void>
 write_message(datastream<Socket> &stream, const Message &message)
 {
-  co_await write_message<Message, Socket>(stream.socket, message);
+  co_await write_message_s(stream.socket, message);
 }
 
+
+/*
 template <typename EndpointSequence>
 net::awaitable<void>
 connect_to(tcp::socket &socket, const EndpointSequence &endpoints)
@@ -125,7 +129,6 @@ connect_to(tcp::socket &socket, const EndpointSequence &endpoints)
   socket.set_option(tcp::no_delay(true));
 }
 
-/*
 net::awaitable<udp::socket> connect_to(const auto &endpoints)
 {
   co_return udp::socket(co_await net::this_coro::executor);
@@ -137,13 +140,9 @@ net::awaitable<datastream<Socket>>
 open_connection(const EndpointSequence &endpoints)
 {
   Socket socket(co_await net::this_coro::executor);
-#if 0
   co_await net::async_connect(socket, endpoints, net::use_awaitable);
 
   socket.set_option(tcp::no_delay(true));
-#else
-  // co_await net::async_connect_to(socket, endpoints, net::use_awaitable);
-#endif
 
   auto message = co_await read_message<std::vector<char>>(socket);
 
