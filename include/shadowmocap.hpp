@@ -35,12 +35,12 @@ using net::ip::udp;
 template <typename Protocol>
 class datastream {
 public:
-  explicit datastream(typename Protocol::socket socket)
+  explicit datastream(tcp::socket socket)
     : socket(std::move(socket)), name_map()
   {
   }
 
-  typename Protocol::socket socket;
+  tcp::socket socket;
   std::vector<std::string> name_map;
 }; // class datastream
 
@@ -128,25 +128,6 @@ net::awaitable<Message> read_message(AsyncReadStream &s)
   co_return message;
 }
 
-template <typename Message>
-net::awaitable<Message> read_message(udp::socket &s)
-{
-  static_assert(
-    sizeof(typename Message::value_type) == sizeof(char),
-    "message is not bytes");
-
-  unsigned length = 0;
-  co_await s.async_receive(
-    net::buffer(&length, sizeof(length)), net::use_awaitable);
-
-  length = ntohl(length);
-  Message message(length, 0);
-
-  co_await s.async_receive(net::buffer(message), net::use_awaitable);
-
-  co_return message;
-}
-
 template <typename Message, typename Protocol>
 net::awaitable<Message> read_message(datastream<Protocol> &stream)
 {
@@ -161,23 +142,6 @@ net::awaitable<Message> read_message(datastream<Protocol> &stream)
   co_return message;
 }
 
-/*
-template <typename Message>
-net::awaitable<void>
-write_message(datastream<udp> &stream, const Message &message)
-{
-  static_assert(
-    sizeof(typename Message::value_type) == sizeof(char),
-    "message is not bytes");
-
-  unsigned length = htonl(static_cast<unsigned>(std::size(message)));
-  co_await stream.socket.async_send(
-    net::buffer(&length, sizeof(length)), net::use_awaitable);
-
-  co_await stream.socket.async_send(net::buffer(message), net::use_awaitable);
-}
-*/
-
 template <typename Message, typename AsyncWriteStream>
 net::awaitable<void> write_message(AsyncWriteStream &s, const Message &message)
 {
@@ -190,20 +154,6 @@ net::awaitable<void> write_message(AsyncWriteStream &s, const Message &message)
     s, net::buffer(&length, sizeof(length)), net::use_awaitable);
 
   co_await net::async_write(s, net::buffer(message), net::use_awaitable);
-}
-
-template <typename Message>
-net::awaitable<void> write_message(udp::socket &s, const Message &message)
-{
-  static_assert(
-    sizeof(typename Message::value_type) == sizeof(char),
-    "message is not bytes");
-
-  unsigned length = htonl(static_cast<unsigned>(std::size(message)));
-  co_await s.async_send(
-    net::buffer(&length, sizeof(length)), net::use_awaitable);
-
-  co_await s.async_send(net::buffer(message), net::use_awaitable);
 }
 
 template <typename Message, typename Protocol>
@@ -230,24 +180,6 @@ net::awaitable<datastream<tcp>> open_connection(const tcp::endpoint &endpoint)
   if (is_metadata(message)) {
     std::cout << std::string(message.begin(), message.end()) << "\n";
   }
-
-  co_return socket;
-}
-
-template <>
-net::awaitable<datastream<udp>> open_connection(const udp::endpoint &endpoint)
-{
-  udp::socket socket(co_await net::this_coro::executor);
-  // socket.open(udp::v4());
-  co_await socket.async_connect(endpoint, net::use_awaitable);
-
-  /*
-  auto message = co_await read_message<std::vector<char>>(socket);
-
-  if (is_metadata(message)) {
-    std::cout << std::string(message.begin(), message.end()) << "\n";
-  }
-  */
 
   co_return socket;
 }

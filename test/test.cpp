@@ -59,6 +59,7 @@ bool run_tcp()
   return false;
 }
 
+/*
 bool run_udp()
 {
   try {
@@ -76,6 +77,7 @@ bool run_udp()
 
   return false;
 }
+*/
 
 TEST_CASE(
   "read 100 samples from the Shadow data service using a TCP socket",
