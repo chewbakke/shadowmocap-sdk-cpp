@@ -16,7 +16,7 @@
 #include <asio/use_awaitable.hpp>
 #endif
 
-#include <iostream>
+#include <chrono>
 #include <regex>
 #include <string>
 #include <vector>
@@ -30,18 +30,18 @@ namespace net = asio;
 #endif
 
 using net::ip::tcp;
-using net::ip::udp;
 
 template <typename Protocol>
 class datastream {
 public:
-  explicit datastream(tcp::socket socket)
-    : socket(std::move(socket)), name_map()
+  explicit datastream(typename Protocol::socket socket)
+    : socket(std::move(socket)), name_map(), deadline()
   {
   }
 
-  tcp::socket socket;
+  typename Protocol::socket socket;
   std::vector<std::string> name_map;
+  std::chrono::steady_clock::time_point deadline;
 }; // class datastream
 
 /// Returns whether a binary message from the Shadow data service is metadata
@@ -97,8 +97,8 @@ std::vector<std::string> parse_metadata(const Message &message)
     return {};
   }
 
-  //
-  // <node id="A"/><node id="B/> -> ["A", "B"]
+  // Create a list of id string in order.
+  // <node id="A"/><node id="B"/> -> ["A", "B"]
   std::vector<std::string> result(num_node);
 
   std::transform(first, last, std::begin(result), [](auto &match) {
@@ -131,6 +131,10 @@ net::awaitable<Message> read_message(AsyncReadStream &s)
 template <typename Message, typename Protocol>
 net::awaitable<Message> read_message(datastream<Protocol> &stream)
 {
+  stream.deadline = std::max(
+    stream.deadline,
+    std::chrono::steady_clock::now() + std::chrono::seconds(1));
+
   auto message = co_await read_message<Message>(stream.socket);
 
   if (is_metadata(message)) {
@@ -163,25 +167,79 @@ write_message(datastream<Protocol> &stream, const Message &message)
   co_await write_message(stream.socket, message);
 }
 
-template <typename Protocol>
-net::awaitable<datastream<Protocol>>
-open_connection(const typename Protocol::endpoint &endpoint);
-
-template <>
 net::awaitable<datastream<tcp>> open_connection(const tcp::endpoint &endpoint)
 {
   tcp::socket socket(co_await net::this_coro::executor);
   co_await socket.async_connect(endpoint, net::use_awaitable);
 
+  // Turn off Nagle algorithm. We are streaming many small packets and intend to
+  // reduce latency at the expense of less efficient transfer of data.
   socket.set_option(tcp::no_delay(true));
 
   auto message = co_await read_message<std::vector<char>>(socket);
 
-  if (is_metadata(message)) {
-    std::cout << std::string(message.begin(), message.end()) << "\n";
+  // Shadow data service responds with its version and name.
+  // <service version="x.y.z" name="configurable"/>
+  if (!is_metadata(message)) {
+    socket.close();
   }
 
   co_return socket;
+}
+
+void close_connection(datastream<tcp> &stream)
+{
+  stream.socket.shutdown(tcp::socket::shutdown_both);
+  stream.socket.close();
+
+  stream.name_map.clear();
+}
+
+/**
+ * From Chris Kohlhoff talk "Talking Async Ep1: Why C++20 is the Awesomest
+ * Language for Network Programming".
+ *
+ * https://youtu.be/icgnqFM-aY4
+ *
+ * And here is the source code from the talk.
+ *
+ * https://github.com/chriskohlhoff/talking-async/blob/master/episode1/step_6.cpp
+ *
+ * This function is intended for use with awaitable operators in Asio.
+ *
+ * co_await(async_read_loop(stream) || watchdog(stream.deadline));
+ *
+ * Where the async_read_loop function updates the deadline timer.
+ *
+ * for (;;) {
+ *   stream.deadline = now() + 1s;
+ *   co_await net::async_read(stream.socket, ...);
+ * }
+ */
+net::awaitable<void> watchdog(std::chrono::steady_clock::time_point &deadline)
+{
+  net::steady_timer timer(co_await net::this_coro::executor);
+
+  auto now = std::chrono::steady_clock::now();
+  while (deadline > now) {
+    timer.expires_at(deadline);
+    co_await timer.async_wait(net::use_awaitable);
+    now = std::chrono::steady_clock::now();
+  }
+}
+
+/**
+ * This function will close a socket that is reading in its own coroutine.
+ *
+ * co_spawn(ctx, async_read_loop(stream), ...);
+ * co_await watchdog(stream);
+ */
+template <typename Protocol>
+net::awaitable<void> watchdog(datastream<Protocol> &stream)
+{
+  co_await watchdog(stream.deadline);
+
+  close_connection(stream);
 }
 
 } // namespace shadowmocap
