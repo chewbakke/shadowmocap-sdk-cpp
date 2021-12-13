@@ -5,18 +5,18 @@
 # argument completes.
 #
 # Usage:
-#   python3 test_server.py
-#   python3 test_server.py ./test_MotionSDK
+#   python mock_sdk_server.py
+#   python mock_sdk_server.py ./test_MotionSDK
 #
 # Runs 5 of the Motion data services, Configurable, Preview, Sensor, Raw and
 # Console each on their own port. We reuse the ports that the Motion Service
 # deploys with so this test server will conflict with installed software.
 #
-# @file    test/test_server.py
+# @file    test/mock_sdk_server.py
 # @author  Luke Tokheim, luke@motionshadow.com
-# @version 3.0
+# @version 4.0
 #
-# Copyright (c) 2019, Motion Workshop
+# Copyright (c) 2022, Motion Workshop
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -42,19 +42,12 @@
 # POSSIBILITY OF SUCH DAMAGE.
 #
 import random
+import socketserver
 import struct
 import subprocess
 import sys
 import threading
 import time
-
-# The Python 3 socketserver module was named SocketServer in 2.7. Also, make an
-# alias to BrokenPipeError for 2.7.
-try:
-    import socketserver
-except ImportError:
-    import SocketServer as socketserver
-    from socket import error as BrokenPipeError
 
 HOST = "localhost"
 PORTS = (32075, 32076, 32077, 32078, 32079, 32000)
@@ -139,6 +132,11 @@ class Handler(socketserver.BaseRequestHandler):
         for i in range(0, 100):
             # Binary message for one sample. Prefixed with length.
             msg = self.make_message(data)
+
+            self.request.sendall(msg)
+            time.sleep(0.01)
+            continue
+
             # Make 1-5 copies to send at random intervals. Try to test the
             # Client ability to receive messages broken into strange chunks.
             msg = b''.join([msg] * random.randint(1, 5))
@@ -161,6 +159,7 @@ class Handler(socketserver.BaseRequestHandler):
 
             dt = 0.01 - dt
             if dt > 0:
+                print(dt)
                 time.sleep(dt)
 
     def read_message(self):
@@ -246,7 +245,10 @@ def main():
 
     socketserver.TCPServer.allow_reuse_address = True
 
-    server_list = [SDKServer((HOST, port)) for port in PORTS]
+    server_list = [
+        SDKServer((HOST, port))
+        for port in PORTS
+    ]
 
     for s in server_list:
         s.start_thread()
