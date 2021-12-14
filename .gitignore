@@ -1,8 +1,14 @@
-# Visual Studio
-*.vcxproj.user
-.vs/
+# macOS and Linux object files
+*.o
 
-# Build folders
-build/bin/
-build/obj/
-stage/
+# macOS and Linux build targets
+build/test_shadowmocap
+
+# Windows build and Visual Studio working files
+build/bin
+build/obj
+build/.vs
+build/*.vcxproj.user
+
+# Clang code coverage data files
+build/coverage.*

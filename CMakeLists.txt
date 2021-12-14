@@ -1,29 +1,21 @@
-cmake_minimum_required(VERSION 3.5 FATAL_ERROR)
+cmake_minimum_required(VERSION 3.19)
 
-project(
-  shadowmocap-sdk-cpp
-  VERSION 0.0.1
-  LANGUAGES CXX)
+project(shadowmocap)
 
-# set(CMAKE_CXX_STANDARD 20)
-# set(CMAKE_CXX_STANDARD_REQUIRED ON)
-# set(CMAKE_CXX_EXTENSIONS OFF)
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-add_library(${PROJECT_NAME} INTERFACE)
+add_library(shadowmocap INTERFACE include/shadowmocap.hpp)
 
-target_include_directories(${PROJECT_NAME} INTERFACE include/)
-
-target_compile_features(${PROJECT_NAME} INTERFACE cxx_std_17)
+target_include_directories(shadowmocap INTERFACE include/)
 
 
 #
 # Unit test app
 #
-add_executable(
-  test_shadowmocap
-  test/test.cpp)
+add_executable(test_shadowmocap test/test.cpp)
 
-target_link_libraries(test_shadowmocap INTERFACE ${PROJECT_NAME})
+target_link_libraries(test_shadowmocap PUBLIC shadowmocap)
 
 #
 # Run unit tests
