@@ -1,9 +1,8 @@
 #
 # @file  .travis.yml
-# @brief Travis CI config file for the Motion SDK classes. Build and run unit
-#        tests on Linux and macOS.
+# @brief Travis CI config file. Build and run unit tests on Linux and macOS.
 #
-dist: xenial
+dist: bionic
 
 language: cpp
 

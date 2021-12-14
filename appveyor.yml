@@ -1,7 +1,7 @@
 #
 # @file  appveyor.yml
-# @brief AppVeyor continuous integration config file for the Motion SDK classes.
-#.       Build and run unit tests on Windows with Visual Studio.
+# @brief AppVeyor continuous integration config file. Build and run unit tests
+#        on Windows with Visual Studio.
 #
 version: 1.0.{build}
 
