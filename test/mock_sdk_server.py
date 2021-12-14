@@ -133,10 +133,6 @@ class Handler(socketserver.BaseRequestHandler):
             # Binary message for one sample. Prefixed with length.
             msg = self.make_message(data)
 
-            self.request.sendall(msg)
-            time.sleep(0.01)
-            continue
-
             # Make 1-5 copies to send at random intervals. Try to test the
             # Client ability to receive messages broken into strange chunks.
             msg = b''.join([msg] * random.randint(1, 5))
