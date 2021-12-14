@@ -211,10 +211,12 @@ void close_connection(datastream<tcp> &stream)
  *
  * Where the async_read_loop function updates the deadline timer.
  *
+ * @code
  * for (;;) {
  *   stream.deadline = now() + 1s;
  *   co_await net::async_read(stream.socket, ...);
  * }
+ * @endcode
  */
 net::awaitable<void> watchdog(std::chrono::steady_clock::time_point &deadline)
 {
@@ -231,8 +233,10 @@ net::awaitable<void> watchdog(std::chrono::steady_clock::time_point &deadline)
 /**
  * This function will close a socket that is reading in its own coroutine.
  *
+ * @code
  * co_spawn(ctx, async_read_loop(stream), ...);
  * co_await watchdog(stream);
+ * @endcode
  */
 template <typename Protocol>
 net::awaitable<void> watchdog(datastream<Protocol> &stream)

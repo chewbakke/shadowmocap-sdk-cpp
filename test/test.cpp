@@ -14,6 +14,8 @@
 #endif
 
 #include <chrono>
+#include <iostream>
+#include <string>
 
 namespace net = shadowmocap::net;
 using net::ip::tcp;
@@ -45,15 +47,14 @@ net::awaitable<void> read_shadowmocap_datastream(const tcp::endpoint &endpoint)
 
   auto stream = co_await open_connection(endpoint);
 
-  const std::string xml = "<configurable><Gq/><c/></configurable>";
+  const std::string xml = "<configurable><Lq/><c/></configurable>";
   co_await write_message(stream, xml);
 
 #if 1
   using namespace net::experimental::awaitable_operators;
 
   co_await(
-    read_shadowmocap_datastream_frames(stream) ||
-    watchdog(stream.deadline));
+    read_shadowmocap_datastream_frames(stream) || watchdog(stream.deadline));
 #else
   co_spawn(
     co_await net::this_coro::executor,
@@ -78,8 +79,7 @@ bool run()
     ctx.run();
 
     return true;
-  } catch (std::exception &e) {
-    std::cerr << e.what() << "\n";
+  } catch (std::exception &) {
   }
 
   return false;
@@ -87,7 +87,7 @@ bool run()
 
 TEST_CASE(
   "read 100 samples from the Shadow data service using a TCP socket",
-  "[shadowmocap][tcp]")
+  "[shadowmocap][datastream]")
 {
   REQUIRE(run());
 }

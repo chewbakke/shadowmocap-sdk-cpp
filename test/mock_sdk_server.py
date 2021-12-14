@@ -159,7 +159,6 @@ class Handler(socketserver.BaseRequestHandler):
 
             dt = 0.01 - dt
             if dt > 0:
-                print(dt)
                 time.sleep(dt)
 
     def read_message(self):
