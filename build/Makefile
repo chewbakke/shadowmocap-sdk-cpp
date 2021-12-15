@@ -5,11 +5,7 @@
 #          applications bundled in this repo.
 #
 
-CPPFLAGS := \
--O3 \
--Wall -Wextra -Werror \
--std=c++20 \
--DSHADOWMOCAP_USE_BOOST_ASIO=0
+CPPFLAGS := -O3 -Wall -Wextra -Werror -std=c++20
 INCLUDE := -I../include -I../lib/asio/asio/include
 
 # Enables Clang Source-based Code Coverage
