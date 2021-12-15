@@ -5,8 +5,12 @@
 #          applications bundled in this repo.
 #
 
-CPPFLAGS := -O3 -Wall -Wextra -Werror -std=c++20
-INCLUDE := -I../include -I/Users/luke/xcompile/osx/local/include
+CPPFLAGS := \
+-O3 \
+-Wall -Wextra -Werror \
+-std=c++20 \
+-DSHADOWMOCAP_USE_BOOST_ASIO=0
+INCLUDE := -I../include -I../lib/asio/asio/include
 
 # Enables Clang Source-based Code Coverage
 # https://clang.llvm.org/docs/SourceBasedCodeCoverage.html

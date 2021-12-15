@@ -19,5 +19,8 @@ matrix:
         - cd build
         - make coverage
         - bash <(curl -s https://codecov.io/bash)
+
 script:
-  - npm run build
+  - cd build
+  - make
+  - make test
