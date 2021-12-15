@@ -9,7 +9,7 @@ jobs:
     - name: checkout
       uses: actions/checkout@v2
       with:
-        submodule_update: ON
+        submodules: recursive
     - name: make
       run: make
       working-directory: build
