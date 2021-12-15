@@ -1,17 +1,14 @@
 name: shadowmocap-sdk-cpp CI
 
-on:
-  push:
-      branches: [ main ]
+on: [push]
 
 jobs:
-  build-and-test:
-      runs-on: ubuntu-latest
-      steps:
-      - uses: actions/checkout@v2
-      - name: make
+  ubuntu-build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: checkout
+      uses: actions/checkout@v2.0.0
+    - name: make
       run: make
-      - name: make test
+    - name: make test
       run: make test
-      with:
-        submodule_update: ON
