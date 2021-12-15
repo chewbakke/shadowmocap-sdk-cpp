@@ -7,8 +7,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - name: checkout
-      uses: actions/checkout@v2.0.0
+      uses: actions/checkout@v2
+      with:
+        submodule_update: ON
     - name: make
       run: make
+      working-directory: build
     - name: make test
       run: make test
+      working-directory: build
