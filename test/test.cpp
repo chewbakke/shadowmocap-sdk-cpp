@@ -20,6 +20,14 @@
 namespace net = shadowmocap::net;
 using net::ip::tcp;
 
+// Handler function for asio::co_spawn to propagate exceptions to the caller
+void rethrow_exception_ptr(std::exception_ptr ptr)
+{
+  if (ptr) {
+    std::rethrow_exception(ptr);
+  }
+}
+
 net::awaitable<void>
 read_shadowmocap_datastream_frames(shadowmocap::datastream<tcp> &stream)
 {
@@ -58,7 +66,7 @@ net::awaitable<void> read_shadowmocap_datastream(const tcp::endpoint &endpoint)
 #else
   co_spawn(
     co_await net::this_coro::executor,
-    read_shadowmocap_datastream_frames(stream), net::detached);
+    read_shadowmocap_datastream_frames(stream), rethrow_exception_ptr);
 
   co_await watchdog(stream);
 #endif
@@ -74,12 +82,13 @@ bool run()
 
     auto endpoint = *shadowmocap::tcp::resolver(ctx).resolve(host, service);
 
-    co_spawn(ctx, read_shadowmocap_datastream(endpoint), net::detached);
+    co_spawn(ctx, read_shadowmocap_datastream(endpoint), rethrow_exception_ptr);
 
     ctx.run();
 
     return true;
-  } catch (std::exception &) {
+  } catch (std::exception &e) {
+    std::cerr << e.what() << "\n";
   }
 
   return false;
