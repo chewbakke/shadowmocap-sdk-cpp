@@ -7,6 +7,14 @@ version: 1.0.{build}
 
 image: Visual Studio 2022
 
+install:
+  - git submodule init
+  - git submodule update
+
+branches:
+  only:
+    - main
+
 configuration: Release
 
 platform:
@@ -17,4 +25,4 @@ build:
   verbosity: minimal
 
 test_script:
-- cmd: python test\mock_sdk_server.py build\bin\%PLATFORM%\%CONFIGURATION%\test_shadowmocap.exe
+  - cmd: python test\mock_sdk_server.py build\bin\%PLATFORM%\%CONFIGURATION%\test_shadowmocap.exe
