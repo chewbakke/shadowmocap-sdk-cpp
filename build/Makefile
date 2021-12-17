@@ -1,11 +1,11 @@
 #
 # @file    build/Makefile
 # @author  Luke Tokheim, luke@motionshadow.com
-# @brief   Makefile used to build and run unit tests and any example
-#          applications bundled in this repo.
+# @brief   Makefile used to build and run unit tests and example application
+#          bundled in this repo.
 #
 
-CPPFLAGS := -O3 -Wall -Wextra -Werror -std=c++20
+CPPFLAGS := -std=c++20 -Wall -Wextra -Werror -O3
 INCLUDE := -I../include -I../lib/asio/asio/include
 
 # Enables Clang Source-based Code Coverage
