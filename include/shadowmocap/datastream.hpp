@@ -1,6 +1,6 @@
-#if !defined(SHADOWMOCAP_USE_BOOST_ASIO)
-#define SHADOWMOCAP_USE_BOOST_ASIO 0
-#endif
+#pragma once
+
+#include <shadowmocap/config.hpp>
 
 #if SHADOWMOCAP_USE_BOOST_ASIO
 #include <boost/asio/awaitable.hpp>
