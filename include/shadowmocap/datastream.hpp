@@ -1,6 +1,6 @@
 #pragma once
 
-#include <shadowmocap/config.hpp>
+#include <shadowmocap/message.hpp>
 
 #if SHADOWMOCAP_USE_BOOST_ASIO
 #include <boost/asio/awaitable.hpp>
@@ -17,7 +17,6 @@
 #endif
 
 #include <chrono>
-#include <regex>
 #include <string>
 #include <vector>
 
@@ -43,71 +42,6 @@ public:
   std::vector<std::string> name_map;
   std::chrono::steady_clock::time_point deadline;
 }; // class datastream
-
-/// Returns whether a binary message from the Shadow data service is metadata
-/// text in XML format and not measurement data.
-/**
- * @param message Container of bytes.
- *
- * @return @c true if the message is an XML string, otherwise @c false.
- */
-template <typename Message>
-bool is_metadata(const Message &message)
-{
-  const std::string XmlMagic = "<?xml";
-
-  if (std::size(message) < std::size(XmlMagic)) {
-    return false;
-  }
-
-  if (!std::equal(
-        std::begin(XmlMagic), std::end(XmlMagic), std::begin(message))) {
-    return false;
-  }
-
-  return true;
-}
-
-/// Parse a metadata message from the Shadow data service and return a flat list
-/// of node string names.
-/**
- * The Shadow data service will update the node name list at the beginning of
- * every socket stream. Use the name list if you need string names for the
- * subsequent measurement data.
- *
- * @param message Container of bytes that contains an XML string.
- *
- * @return List of node string names in the same order as measurement data.
- */
-template <typename Message>
-std::vector<std::string> parse_metadata(const Message &message)
-{
-  // Use regular expressions to parse the very simple XML string so we do not
-  // depend on a full XML library.
-  std::regex re("<node id=\"([^\"]+)\" key=\"(\\d+)\"");
-
-  auto first = std::regex_iterator(std::begin(message), std::end(message), re);
-  auto last = decltype(first)();
-
-  // Skip over the first <node id="default"> root level element.
-  ++first;
-
-  auto num_node = std::distance(first, last);
-  if (num_node == 0) {
-    return {};
-  }
-
-  // Create a list of id string in order.
-  // <node id="A"/><node id="B"/> -> ["A", "B"]
-  std::vector<std::string> result(num_node);
-
-  std::transform(first, last, std::begin(result), [](auto &match) {
-    // Return submatch #1 as a string, the id="..." attribute.
-    return match.str(1);
-  });
-
-  return result;
-}
 
 template <typename Message, typename AsyncReadStream>
 net::awaitable<Message> read_message(AsyncReadStream &s)
