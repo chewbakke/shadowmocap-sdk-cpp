@@ -71,32 +71,33 @@ class Handler(socketserver.BaseRequestHandler):
 
         is_configurable = False
         if port == 32079:
-            name = b"preview"
+            name = "preview"
         elif port == 32078:
-            name = b"sensor"
+            name = "sensor"
         elif port == 32077:
-            name = b"raw"
+            name = "raw"
         elif port == 32076:
-            name = b"configurable"
+            name = "configurable"
             is_configurable = True
         elif port == 32075:
-            name = b"console"
+            name = "console"
         else:
-            name = b"test"
+            name = "test"
             is_configurable = True
 
-        # Motion SDK service always prints out its identity as an XML string.
+        # Data service always prints out its identity as an XML string.
         self.write_message(
-            b'<?xml version="1.0"?><service name="' + name + b'"/>')
+            f'<?xml version="1.0"?><service name="{name}"/>'.encode())
 
         if is_configurable:
             # Configurable service requires a channel list.
             msg = self.read_message()
 
-        # Before any sample data, a Motion SDK service always emits the device
-        # key to string id list.
+        # Before any sample data, the service always sends the device key to
+        # string id list.
         self.write_message(
-            b'<?xml version="1.0"?><node><node id="Node" key="1"/></node>')
+            b'<?xml version="1.0"?>'
+            b'<node id="default" key="0"><node id="Node" key="1"/></node>')
 
         # One device. Fill out a canned message based on which data service
         # we are implementing.
