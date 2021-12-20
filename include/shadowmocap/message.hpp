@@ -10,6 +10,11 @@
 
 namespace shadowmocap {
 
+/**
+ * Utility struct that matches the packed binary layout of one item in a
+ * measurement message. Use PODs such that we can overlay this struct onto the
+ * binary data without ever copying.
+ */
 template <unsigned N>
 struct message_view_item {
   unsigned key;
@@ -17,6 +22,13 @@ struct message_view_item {
   float data[N];
 }; // struct message_view_item
 
+/// Parse a binary message and returns an iterable container of items.
+/**
+ * message = [item0, ..., itemM)
+ * item = [uint = key] [uint = N] [float0, ..., floatN)
+ * 
+ * @param message Container of bytes.
+ */
 template <unsigned N, typename Message>
 decltype(auto) make_message_view(Message &message)
 {
@@ -27,6 +39,7 @@ decltype(auto) make_message_view(Message &message)
   static_assert(offsetof(item_type, length) == 4);
   static_assert(offsetof(item_type, data) == 8);
 
+  // Sanity checks. Return empty container if we fail.
   if (std::empty(message) || (std::size(message) % sizeof(item_type) != 0)) {
     return std::span<item_type>{};
   }
