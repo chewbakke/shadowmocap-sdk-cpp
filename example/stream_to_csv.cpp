@@ -12,79 +12,6 @@
 namespace net = shadowmocap::net;
 using net::ip::tcp;
 
-// Handler function for asio::co_spawn to propagate exceptions to the caller
-void rethrow_exception_ptr(std::exception_ptr ptr)
-{
-  if (ptr) {
-    std::rethrow_exception(ptr);
-  }
-}
-
-net::awaitable<void> read_shadowmocap_datastream_frames(
-  shadowmocap::datastream<tcp> &stream, net::stream_file &file)
-{
-  auto start = std::chrono::steady_clock::now();
-
-  std::size_t num_bytes = 0;
-  for (int i = 0; i < 100; ++i) {
-    stream.deadline = std::max(
-      stream.deadline,
-      std::chrono::steady_clock::now() + std::chrono::seconds(1));
-
-    auto message = co_await read_message<std::string>(stream);
-    num_bytes += std::size(message);
-
-    co_await net::async_write(file, net::buffer(message), net::use_awaitable);
-  }
-
-  auto end = std::chrono::steady_clock::now();
-
-  std::cout << "read 100 samples (" << num_bytes << " bytes) in "
-            << std::chrono::duration<double>(end - start).count() << "\n";
-}
-
-net::awaitable<void> read_shadowmocap_datastream(const tcp::endpoint &endpoint)
-{
-  using namespace shadowmocap;
-  using namespace net::experimental::awaitable_operators;
-
-  auto stream = co_await open_connection(endpoint);
-
-  const std::string xml = "<configurable><Lq/><c/></configurable>";
-  co_await write_message(stream, xml);
-
-  net::stream_file file(
-    co_await net::this_coro::executor, "out.csv",
-    asio::stream_file::write_only | net::stream_file::create |
-      net::stream_file::truncate);
-
-  co_await(
-    read_shadowmocap_datastream_frames(stream, file) ||
-    watchdog(stream.deadline));
-}
-
-bool run()
-{
-  try {
-    net::io_context ctx;
-
-    const std::string host = "127.0.0.1";
-    const std::string service = "32076";
-
-    auto endpoint = *shadowmocap::tcp::resolver(ctx).resolve(host, service);
-
-    co_spawn(ctx, read_shadowmocap_datastream(endpoint), rethrow_exception_ptr);
-
-    ctx.run();
-
-    return true;
-  } catch (std::exception &e) {
-    std::cerr << e.what() << "\n";
-  }
-
-  return false;
-}
-
 /**
   Utility class to store all of the options to run our Motion SDK data stream.
 */
@@ -125,10 +52,10 @@ public:
   int frames;
 
   /** IP address to connect to, defaults to "127.0.0.1". */
-  std::string address;
+  std::string host;
 
-  /** Port to connect to, defaults to 32076. */
-  unsigned port;
+  /** Service to connect to, defaults to port "32076". */
+  std::string service;
 
   /** Print this string in between every column, defaults to ",". */
   std::string separator;
@@ -143,6 +70,103 @@ public:
   bool header;
 }; // class command_line_options
 
+// Handler function for asio::co_spawn to propagate exceptions to the caller
+void rethrow_exception_ptr(std::exception_ptr ptr)
+{
+  if (ptr) {
+    std::rethrow_exception(ptr);
+  }
+}
+
+net::awaitable<void> read_shadowmocap_datastream_frames(
+  const command_line_options &options, shadowmocap::datastream<tcp> &stream,
+  net::stream_file &file)
+{
+  constexpr auto NumChannel = 8;
+
+  std::ostringstream line;
+  line.setf(std::ios_base::fixed, std::ios_base::floatfield);
+  line.precision(3);
+
+  int num_frames = 0;
+  for (;;) {
+    stream.deadline = std::max(
+      stream.deadline,
+      std::chrono::steady_clock::now() + std::chrono::seconds(1));
+
+    auto message = co_await read_message<std::string>(stream);
+
+    int column = 0;
+
+    auto view = shadowmocap::make_message_view<NumChannel>(message);
+    for (auto &item : view) {
+      for (auto &value : item.data) {
+        if (column++ > 0) {
+          line << options.separator;
+        }
+
+        line << value;
+      }
+    }
+
+    line << options.newline;
+
+    // Capture this row as a string and reset for the next line.
+    auto str = line.str();
+    line.str("");
+
+    co_await net::async_write(file, net::buffer(str), net::use_awaitable);
+
+    // Optionally stop after N frames of data.
+    if ((options.frames > 0) && (++num_frames >= options.frames)) {
+      break;
+    }
+  }
+}
+
+net::awaitable<void> read_shadowmocap_datastream(
+  const command_line_options &options, const tcp::endpoint &endpoint)
+{
+  using namespace shadowmocap;
+  using namespace net::experimental::awaitable_operators;
+
+  auto stream = co_await open_connection(endpoint);
+
+  const std::string xml = "<configurable><Lq/><c/></configurable>";
+  co_await write_message(stream, xml);
+
+  net::stream_file file(
+    co_await net::this_coro::executor, options.filename,
+    asio::stream_file::write_only | net::stream_file::create |
+      net::stream_file::truncate);
+
+  co_await(
+    read_shadowmocap_datastream_frames(options, stream, file) ||
+    watchdog(stream.deadline));
+}
+
+bool stream_data_to_csv(const command_line_options &options)
+{
+  try {
+    net::io_context ctx;
+
+    auto endpoint =
+      *shadowmocap::tcp::resolver(ctx).resolve(options.host, options.service);
+
+    co_spawn(
+      ctx, read_shadowmocap_datastream(options, endpoint),
+      rethrow_exception_ptr);
+
+    ctx.run();
+
+    return true;
+  } catch (std::exception &e) {
+    std::cerr << e.what() << "\n";
+  }
+
+  return false;
+}
+
 int main(int argc, char **argv)
 {
   command_line_options options;
@@ -150,26 +174,8 @@ int main(int argc, char **argv)
     return options.print_help(&std::cerr, *argv);
   }
 
-#if 0
-
   // Stream frames to a CSV spreadsheet file.
-  std::ofstream fout;
-  if (!options.filename.empty()) {
-    fout.open(options.filename, std::ios_base::out | std::ios_base::binary);
-  }
-
-  // Capture error messages so we do not interfere with the CSV output stream.
-  std::ostringstream err;
-
-  const int result =
-    stream_data_to_csv(fout.is_open() ? &fout : &std::cout, &err, options);
-  if (result != 0) {
-    std::cerr << err.str() << options.newline;
-  }
-
-#endif
-
-  if (!run()) {
+  if (!stream_data_to_csv(options)) {
     return -1;
   }
 
@@ -177,8 +183,8 @@ int main(int argc, char **argv)
 }
 
 command_line_options::command_line_options()
-  : message(), filename(), frames(), address("127.0.0.1"), port(32076),
-    separator(","), newline("\n"), header(false)
+  : message(), filename("out.csv"), frames(), host("127.0.0.1"),
+    service("32076"), separator(","), newline("\n"), header(false)
 {
 }
 
