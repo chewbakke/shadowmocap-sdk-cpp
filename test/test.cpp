@@ -31,6 +31,8 @@ void rethrow_exception_ptr(std::exception_ptr ptr)
 net::awaitable<void>
 read_shadowmocap_datastream_frames(shadowmocap::datastream<tcp> &stream)
 {
+  constexpr auto NumChannel = 8;
+
   auto start = std::chrono::steady_clock::now();
 
   std::size_t num_bytes = 0;
@@ -41,6 +43,44 @@ read_shadowmocap_datastream_frames(shadowmocap::datastream<tcp> &stream)
 
     auto message = co_await read_message<std::string>(stream);
     num_bytes += std::size(message);
+
+    const auto NumItem = std::size(stream.name_map);
+    
+    REQUIRE(NumItem > 0);
+
+    if (NumItem == 0) {
+      throw std::runtime_error("name map must not be empty");
+    }
+
+    REQUIRE(std::size(message) == NumItem * (2 + NumChannel) * 4);
+
+    if (std::size(message) != NumItem * (2 + NumChannel) * 4) {
+      throw std::runtime_error("message size mismatch");
+    }
+
+    auto view = shadowmocap::make_message_view<NumChannel>(message);
+
+    REQUIRE(std::size(view) == NumItem);
+
+    if (std::size(view) != NumItem) {
+      throw std::runtime_error("message item count mismatch");
+    }
+
+    for (auto &item : view) {
+      REQUIRE(item.length == NumChannel);
+
+      if (item.length != NumChannel) {
+        throw std::runtime_error("message item channel size mismatch");
+      }
+
+      std::cout << item.key << " " << item.length << " = ";
+
+      std::copy(
+        std::begin(item.data), std::end(item.data),
+        std::ostream_iterator<float>(std::cout, ", "));
+
+      std::cout << "\n";
+    }
   }
 
   auto end = std::chrono::steady_clock::now();
@@ -77,8 +117,8 @@ bool run()
   try {
     net::io_context ctx;
 
-    const std::string host = "127.0.0.1";
-    const std::string service = "32076";
+    const std::string_view host = "127.0.0.1";
+    const std::string_view service = "32076";
 
     auto endpoint = *shadowmocap::tcp::resolver(ctx).resolve(host, service);
 

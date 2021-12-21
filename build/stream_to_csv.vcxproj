@@ -19,10 +19,10 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{4beb23b0-91bc-419d-8b8f-64a3094e7d5a}</ProjectGuid>
-    <RootNamespace>test_shadowmocap</RootNamespace>
+    <ProjectGuid>{07267b3a-b6d6-4c60-ad98-06d59c73eee6}</ProjectGuid>
+    <RootNamespace>stream_to_csv</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
-    <ProjectName>test_shadowmocap</ProjectName>
+    <ProjectName>stream_to_csv</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Label="Configuration">
@@ -145,7 +145,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="..\test\test.cpp" />
+    <ClCompile Include="..\example\stream_to_csv.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
