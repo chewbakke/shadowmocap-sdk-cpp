@@ -6,7 +6,7 @@ This project requires C++20 support for coroutines.
 
 - Microsoft Visual Studio 2022
 - Clang 13
-- G++ 11 (not tested yet)
+- G++ 10
 
 ## License
 
