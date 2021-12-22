@@ -31,7 +31,18 @@ void rethrow_exception_ptr(std::exception_ptr ptr)
 net::awaitable<void>
 read_shadowmocap_datastream_frames(shadowmocap::datastream<tcp> &stream)
 {
-  constexpr auto NumChannel = 8;
+  using namespace shadowmocap;
+
+  constexpr auto Mask = channel::Lq | channel::c;
+  constexpr auto NumChannel = get_num_channel(Mask);
+
+  {
+    // Create an XML string that lists the channels we want in order.
+    // <configurable><Lq/><c/></configurable>
+    auto message = make_channel_message<std::string>(Mask);
+
+    co_await write_message(stream, message);
+  }
 
   auto start = std::chrono::steady_clock::now();
 
@@ -45,7 +56,7 @@ read_shadowmocap_datastream_frames(shadowmocap::datastream<tcp> &stream)
     num_bytes += std::size(message);
 
     const auto NumItem = std::size(stream.name_map);
-    
+
     REQUIRE(NumItem > 0);
 
     if (NumItem == 0) {
@@ -94,9 +105,6 @@ net::awaitable<void> read_shadowmocap_datastream(const tcp::endpoint &endpoint)
   using namespace shadowmocap;
 
   auto stream = co_await open_connection(endpoint);
-
-  const std::string xml = "<configurable><Lq/><c/></configurable>";
-  co_await write_message(stream, xml);
 
 #if 1
   using namespace net::experimental::awaitable_operators;

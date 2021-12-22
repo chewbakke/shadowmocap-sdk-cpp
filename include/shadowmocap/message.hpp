@@ -1,6 +1,6 @@
 #pragma once
 
-#include <shadowmocap/config.hpp>
+#include <shadowmocap/channel.hpp>
 
 #include <iterator>
 #include <regex>
@@ -26,7 +26,7 @@ struct message_view_item {
 /**
  * message = [item0, ..., itemM)
  * item = [uint = key] [uint = N] [float0, ..., floatN)
- * 
+ *
  * @param message Container of bytes.
  */
 template <unsigned N, typename Message>
@@ -111,6 +111,43 @@ std::vector<std::string> parse_metadata(const Message &message)
     // Return submatch #1 as a string, the id="..." attribute.
     return match.str(1);
   });
+
+  return result;
+}
+
+/// Create an XML metadata string that lists the channels we want.
+/**
+ * Always sorted by the channel enumeration value from smallest to largest.
+ *
+ * @param mask Bitmask of channel
+ *
+ * @code
+ * auto message = make_channel_message<std::string>(channel::Lq | channel::c);
+ * // message == "<configurable><Lq/><c/></configurable>"
+ * @endcode
+ */
+template <typename Message>
+Message make_channel_message(unsigned mask)
+{
+  static_assert(
+    sizeof(typename Message::value_type) == sizeof(char),
+    "message is not bytes");
+
+  constexpr auto NumChannel = 28;
+  const std::string_view Pre = "<?xml version=\"1.0\"?><configurable>";
+  const std::string_view Post = "</configurable>";
+
+  Message result(std::begin(Pre), std::end(Pre));
+
+  for (auto i = 0; i < NumChannel; ++i) {
+    auto c = static_cast<channel>(1 << i);
+    if (mask & c) {
+      const auto element = std::string("<") + get_name(c) + "/>";
+      result.insert(std::end(result), std::begin(element), std::end(element));
+    }
+  }
+
+  result.insert(std::end(result), std::begin(Post), std::end(Post));
 
   return result;
 }
