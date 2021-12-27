@@ -133,7 +133,6 @@ Message make_channel_message(unsigned mask)
     sizeof(typename Message::value_type) == sizeof(char),
     "message is not bytes");
 
-  constexpr auto NumChannel = 28;
   const std::string_view Pre = "<?xml version=\"1.0\"?><configurable>";
   const std::string_view Post = "</configurable>";
 
@@ -142,7 +141,7 @@ Message make_channel_message(unsigned mask)
   for (auto i = 0; i < NumChannel; ++i) {
     auto c = static_cast<channel>(1 << i);
     if (mask & c) {
-      const auto element = std::string("<") + get_name(c) + "/>";
+      const auto element = std::string("<") + get_channel_name(c) + "/>";
       result.insert(std::end(result), std::begin(element), std::end(element));
     }
   }

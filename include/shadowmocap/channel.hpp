@@ -42,6 +42,8 @@ enum class channel : unsigned {
   Bq = 1 << 27
 }; // enum class channel
 
+constexpr auto NumChannel = 28;
+
 /// Test a channel against a bitmask value.
 /**
  * @code
@@ -88,7 +90,7 @@ constexpr T &operator|=(T &lhs, channel rhs)
  * dimension(channel::a) -> 3 (ax, ay, az)
  * dimension(channel::Lq) -> 4 (Lqw, Lqx, Lqy, Lqz)
  */
-constexpr unsigned get_dimension(channel c)
+constexpr unsigned get_channel_dimension(channel c)
 {
   switch (c) {
   case channel::Gq:
@@ -128,7 +130,7 @@ constexpr unsigned get_dimension(channel c)
   };
 }
 
-constexpr const char *get_name(channel c)
+constexpr const char *get_channel_name(channel c)
 {
   switch (c) {
   case channel::Gq:
@@ -195,14 +197,12 @@ constexpr const char *get_name(channel c)
 
 constexpr unsigned get_num_channel(unsigned mask)
 {
-  constexpr auto NumChannel = 28;
-
   unsigned result = 0;
 
   for (auto i = 0; i < NumChannel; ++i) {
     auto c = static_cast<channel>(1 << i);
     if (mask & c) {
-      result += get_dimension(c);
+      result += get_channel_dimension(c);
     }
   }
 
