@@ -34,13 +34,13 @@ template <typename Protocol>
 class datastream {
 public:
   explicit datastream(typename Protocol::socket socket)
-    : socket(std::move(socket)), name_map(), deadline()
+    : socket_(std::move(socket)), names_(), deadline_()
   {
   }
 
-  typename Protocol::socket socket;
-  std::vector<std::string> name_map;
-  std::chrono::steady_clock::time_point deadline;
+  typename Protocol::socket socket_;
+  std::vector<std::string> names_;
+  std::chrono::steady_clock::time_point deadline_;
 }; // class datastream
 
 template <typename Message, typename AsyncReadStream>
@@ -65,16 +65,12 @@ net::awaitable<Message> read_message(AsyncReadStream &s)
 template <typename Message, typename Protocol>
 net::awaitable<Message> read_message(datastream<Protocol> &stream)
 {
-  stream.deadline = std::max(
-    stream.deadline,
-    std::chrono::steady_clock::now() + std::chrono::seconds(1));
-
-  auto message = co_await read_message<Message>(stream.socket);
+  auto message = co_await read_message<Message>(stream.socket_);
 
   if (is_metadata(message)) {
-    stream.name_map = parse_metadata(message);
+    stream.names_ = parse_metadata(message);
 
-    message = co_await read_message<Message>(stream.socket);
+    message = co_await read_message<Message>(stream.socket_);
   }
 
   co_return message;
@@ -101,7 +97,7 @@ template <typename Message, typename Protocol>
 net::awaitable<void>
 write_message(datastream<Protocol> &stream, const Message &message)
 {
-  co_await write_message(stream.socket, message);
+  co_await write_message(stream.socket_, message);
 }
 
 net::awaitable<datastream<tcp>> open_connection(const tcp::endpoint &endpoint)
@@ -126,10 +122,23 @@ net::awaitable<datastream<tcp>> open_connection(const tcp::endpoint &endpoint)
 
 void close_connection(datastream<tcp> &stream)
 {
-  stream.socket.shutdown(tcp::socket::shutdown_both);
-  stream.socket.close();
+  stream.socket_.shutdown(tcp::socket::shutdown_both);
+  stream.socket_.close();
 
-  stream.name_map.clear();
+  stream.names_.clear();
+}
+
+/**
+ * Give the datastream more time to complete its next operation with respect to
+ * the watchdog coroutine.
+ */
+template <class Rep, class Period>
+void extend_deadline_for(
+  datastream<tcp> &stream,
+  const std::chrono::duration<Rep, Period> &timeout_duration)
+{
+  stream.deadline_ = std::max(
+    stream.deadline_, std::chrono::steady_clock::now() + timeout_duration);
 }
 
 /**
@@ -144,18 +153,19 @@ void close_connection(datastream<tcp> &stream)
  *
  * This function is intended for use with awaitable operators in Asio.
  *
- * co_await(async_read_loop(stream) || watchdog(stream.deadline));
+ * co_await(async_read_loop(stream) || watchdog(stream.deadline_));
  *
  * Where the async_read_loop function updates the deadline timer.
  *
  * @code
  * for (;;) {
- *   stream.deadline = now() + 1s;
- *   co_await net::async_read(stream.socket, ...);
+ *   stream.deadline_ = + now() + 1s;
+ *   co_await net::async_read(stream.socket_, ...);
  * }
  * @endcode
  */
-net::awaitable<void> watchdog(std::chrono::steady_clock::time_point &deadline)
+net::awaitable<void>
+watchdog(const std::chrono::steady_clock::time_point &deadline)
 {
   net::steady_timer timer(co_await net::this_coro::executor);
 
@@ -178,7 +188,7 @@ net::awaitable<void> watchdog(std::chrono::steady_clock::time_point &deadline)
 template <typename Protocol>
 net::awaitable<void> watchdog(datastream<Protocol> &stream)
 {
-  co_await watchdog(stream.deadline);
+  co_await watchdog(stream.deadline_);
 
   close_connection(stream);
 }

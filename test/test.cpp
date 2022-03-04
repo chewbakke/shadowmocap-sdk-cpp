@@ -51,14 +51,12 @@ read_shadowmocap_datastream_frames(shadowmocap::datastream<tcp> &stream)
 
   std::size_t num_bytes = 0;
   for (int i = 0; i < 100; ++i) {
-    stream.deadline = std::max(
-      stream.deadline,
-      std::chrono::steady_clock::now() + std::chrono::seconds(1));
+    extend_deadline_for(stream, std::chrono::seconds(1));
 
     auto message = co_await read_message<std::string>(stream);
     num_bytes += std::size(message);
 
-    const auto NumItem = std::size(stream.name_map);
+    const auto NumItem = std::size(stream.names_);
 
     REQUIRE(NumItem > 0);
 
@@ -113,7 +111,7 @@ net::awaitable<void> read_shadowmocap_datastream(const tcp::endpoint &endpoint)
   using namespace net::experimental::awaitable_operators;
 
   co_await(
-    read_shadowmocap_datastream_frames(stream) || watchdog(stream.deadline));
+    read_shadowmocap_datastream_frames(stream) || watchdog(stream.deadline_));
 #else
   co_spawn(
     co_await net::this_coro::executor,
