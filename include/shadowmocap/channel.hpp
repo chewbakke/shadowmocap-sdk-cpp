@@ -4,7 +4,7 @@
 
 namespace shadowmocap {
 
-/// Enumerate all possible measurements that are associated with one data node.
+/// Enumerate all possible measurements that are associated with one data node
 /**
  * Use as a bitmask to define the active channels. Tag data nodes with every
  * channel that is present or use to request specific measurements in a data
@@ -44,7 +44,7 @@ enum class channel : unsigned {
 
 constexpr auto NumChannel = 28;
 
-/// Test a channel against a bitmask value.
+/// Test a channel against a bitmask value
 /**
  * @code
  * unsigned mask = channel::Gq | channel::Gdq | channel::la;
@@ -59,7 +59,7 @@ constexpr unsigned operator&(T lhs, channel rhs)
   return static_cast<unsigned>(lhs) & static_cast<unsigned>(rhs);
 }
 
-/// Chain multiple channels into a bitmask value.
+/// Chain multiple channels into a bitmask value
 /**
  * @code
  * unsigned mask = channel::Gq | channel::Gdq | channel::la;
@@ -71,7 +71,7 @@ constexpr unsigned operator|(T lhs, channel rhs)
   return static_cast<unsigned>(lhs) | static_cast<unsigned>(rhs);
 }
 
-/// Build up a bitmask value of multiple channels iteratively.
+/// Build up a bitmask value of multiple channels iteratively
 /**
  * @code
  * unsigned mask = 0;
@@ -87,7 +87,7 @@ constexpr T &operator|=(T &lhs, channel rhs)
   return lhs;
 }
 
-/// Get the number of scalar values in a channel.
+/// Get the number of scalar values in a channel
 /**
  * get_channel_dimension(channel::a) -> 3 (ax, ay, az)
  * get_channel_dimension(channel::Lq) -> 4 (Lqw, Lqx, Lqy, Lqz)
@@ -132,7 +132,7 @@ constexpr unsigned get_channel_dimension(channel c)
   };
 }
 
-/// Get the string name of a channel from its enumeration.
+/// Get the string name of a channel from its enumeration
 /**
  * get_channel_name(channel::a) -> "a"
  * get_channel_name(channel::Lq) -> "Lq"
@@ -202,15 +202,13 @@ constexpr const char *get_channel_name(channel c)
   }
 }
 
-/// Get the total number of all scalar values in a bitmask of channels.
+/// Get the total number of all scalar values in a bitmask of channels
 /**
- * @code
- * // Lq is a 4-vector, la is a 3-vector.
- * // Lq + la concatenate to (Lqw, Lqx, Lqy, Lqz, lax, lay, laz)
- * unsigned num_channel = get_channel_mask_dimension(channel::Lq | channel::la);
- * assert(num_channel == 7);
- * @endcode
-*/
+ * Lq is a 4-vector, la is a 3-vector
+ * Concatenate Lq and la to get (Lqw, Lqx, Lqy, Lqz, lax, lay, laz)
+ *
+ * get_channel_mask_dimension(channel::Lq | channel::la) -> 7
+ */
 constexpr unsigned get_channel_mask_dimension(unsigned mask)
 {
   unsigned result = 0;

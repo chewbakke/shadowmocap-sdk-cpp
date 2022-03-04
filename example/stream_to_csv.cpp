@@ -72,7 +72,11 @@ net::awaitable<void> read_shadowmocap_datastream_frames(
   const command_line_options &options, shadowmocap::datastream<tcp> &stream,
   asio::stream_file &file)
 {
-  constexpr auto ItemSize = 8;
+  using namespace shadowmocap;
+  using namespace std::chrono_literals;
+
+  constexpr auto ItemMask = channel::Lq | channel::c;
+  constexpr auto ItemSize = get_channel_mask_dimension(ItemMask);
 
   std::ostringstream line;
   line.setf(std::ios_base::fixed, std::ios_base::floatfield);
@@ -80,15 +84,53 @@ net::awaitable<void> read_shadowmocap_datastream_frames(
 
   int num_frames = 0;
   for (;;) {
-    stream.deadline = std::max(
-      stream.deadline,
-      std::chrono::steady_clock::now() + std::chrono::seconds(1));
+    extend_deadline_for(stream, 1s);
 
     auto message = co_await read_message<std::string>(stream);
 
     int column = 0;
 
-    auto view = shadowmocap::make_message_view<ItemSize>(message);
+    if (!stream.names_.empty()) {
+      std::vector<std::string> channel_names;
+      channel_names.reserve(ItemSize);
+
+      for (auto c : {channel::Lq, channel::c}) {
+        
+        // Something like "Gq" or "a"
+        const std::string prefix = get_channel_name(c);
+
+        // Expand with axes "w", "x", "y", and "z"
+        const auto dim = get_channel_dimension(c);
+        if (dim == 1) {
+          channel_names.push_back(prefix);
+        } else {
+          if (dim == 4) {
+            channel_names.push_back(prefix + "w");
+          }
+
+          for (const auto &axis : {"x", "y", "z"}) {
+            channel_names.push_back(prefix + axis);
+          }
+        }
+      }
+
+      for (auto &name : stream.names_) {
+        for (auto &channel_name : channel_names) {
+          if (column++ > 0) {
+            line << options.separator;
+          }
+
+          line << name << "." << channel_name;
+        }
+      }
+
+      line << options.newline;
+      column = 0;
+
+      stream.names_.clear();
+    }
+
+    auto view = make_message_view<ItemSize>(message);
     for (auto &item : view) {
       for (auto &value : item.data) {
         if (column++ > 0) {
@@ -122,7 +164,9 @@ net::awaitable<void> read_shadowmocap_datastream(
 
   auto stream = co_await open_connection(endpoint);
 
-  const std::string xml = "<configurable><Lq/><c/></configurable>";
+  // Request a list of channels for this data stream
+  const std::string xml =
+    make_channel_message<std::string>(channel::Lq | channel::c);
   co_await write_message(stream, xml);
 
   asio::stream_file file(
@@ -132,7 +176,7 @@ net::awaitable<void> read_shadowmocap_datastream(
 
   co_await(
     read_shadowmocap_datastream_frames(options, stream, file) ||
-    watchdog(stream.deadline));
+    watchdog(stream.deadline_));
 }
 
 bool stream_data_to_csv(const command_line_options &options)
@@ -143,14 +187,12 @@ bool stream_data_to_csv(const command_line_options &options)
     auto endpoint =
       *shadowmocap::tcp::resolver(ctx).resolve(options.host, options.service);
 
-    co_spawn(
-      ctx, read_shadowmocap_datastream(options, endpoint),
-      [](auto ptr) {
-        // Error function for to propagate exceptions to the caller
-        if (ptr) {
-          std::rethrow_exception(ptr);
-        }
-      });
+    co_spawn(ctx, read_shadowmocap_datastream(options, endpoint), [](auto ptr) {
+      // Error function for to propagate exceptions to the caller
+      if (ptr) {
+        std::rethrow_exception(ptr);
+      }
+    });
 
     ctx.run();
 

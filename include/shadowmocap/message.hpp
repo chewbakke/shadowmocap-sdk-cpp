@@ -90,10 +90,14 @@ std::vector<std::string> parse_metadata(const Message &message)
 {
   // Use regular expressions to parse the very simple XML string so we do not
   // depend on a full XML library.
-  std::regex re("<node id=\"([^\"]+)\" key=\"(\\d+)\"");
+  std::regex re("<node\\s+id=\"([^\"]+)\"\\s+key=\"(\\d+)\"");
 
   auto first = std::regex_iterator(std::begin(message), std::end(message), re);
   auto last = decltype(first)();
+
+  if (first == last) {
+    return {};
+  }
 
   // Skip over the first <node id="default"> root level element.
   ++first;
@@ -133,7 +137,8 @@ Message make_channel_message(unsigned mask)
     sizeof(typename Message::value_type) == sizeof(char),
     "message is not bytes");
 
-  const std::string_view Pre = "<?xml version=\"1.0\"?><configurable>";
+  const std::string_view Pre =
+    "<?xml version=\"1.0\"?><configurable inactive=\"1\">";
   const std::string_view Post = "</configurable>";
 
   Message result(std::begin(Pre), std::end(Pre));
