@@ -71,12 +71,14 @@ constexpr unsigned operator|(T lhs, channel rhs)
   return static_cast<unsigned>(lhs) | static_cast<unsigned>(rhs);
 }
 
-/// Build up a bitmask value iteratively.
+/// Build up a bitmask value of multiple channels iteratively.
 /**
- *  unsigned mask = 0;
- *  mask |= channel::Gq;
- *  mask |= channel::Gdq;
- *  mask |= channel::la;
+ * @code
+ * unsigned mask = 0;
+ * mask |= channel::Gq;
+ * mask |= channel::Gdq;
+ * mask |= channel::la;
+ * @endcode
  */
 template <typename T>
 constexpr T &operator|=(T &lhs, channel rhs)
@@ -85,10 +87,10 @@ constexpr T &operator|=(T &lhs, channel rhs)
   return lhs;
 }
 
-/// Return the number of scalar values in a channel.
+/// Get the number of scalar values in a channel.
 /**
- * dimension(channel::a) -> 3 (ax, ay, az)
- * dimension(channel::Lq) -> 4 (Lqw, Lqx, Lqy, Lqz)
+ * get_channel_dimension(channel::a) -> 3 (ax, ay, az)
+ * get_channel_dimension(channel::Lq) -> 4 (Lqw, Lqx, Lqy, Lqz)
  */
 constexpr unsigned get_channel_dimension(channel c)
 {
@@ -130,6 +132,11 @@ constexpr unsigned get_channel_dimension(channel c)
   };
 }
 
+/// Get the string name of a channel from its enumeration.
+/**
+ * get_channel_name(channel::a) -> "a"
+ * get_channel_name(channel::Lq) -> "Lq"
+ */
 constexpr const char *get_channel_name(channel c)
 {
   switch (c) {
@@ -195,7 +202,16 @@ constexpr const char *get_channel_name(channel c)
   }
 }
 
-constexpr unsigned get_num_channel(unsigned mask)
+/// Get the total number of all scalar values in a bitmask of channels.
+/**
+ * @code
+ * // Lq is a 4-vector, la is a 3-vector.
+ * // Lq + la concatenate to (Lqw, Lqx, Lqy, Lqz, lax, lay, laz)
+ * unsigned num_channel = get_channel_mask_dimension(channel::Lq | channel::la);
+ * assert(num_channel == 7);
+ * @endcode
+*/
+constexpr unsigned get_channel_mask_dimension(unsigned mask)
 {
   unsigned result = 0;
 
@@ -209,6 +225,7 @@ constexpr unsigned get_num_channel(unsigned mask)
   return result;
 }
 
+// Get a mask that activates all possible channels.
 constexpr unsigned get_all_channel_mask()
 {
   return 0x0FFFFFFF;

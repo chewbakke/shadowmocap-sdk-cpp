@@ -12,9 +12,7 @@
 namespace net = shadowmocap::net;
 using net::ip::tcp;
 
-/**
-  Utility class to store all of the options to run our Motion SDK data stream.
-*/
+// Utility class to store all of the options to run our data stream.
 class command_line_options {
 public:
   command_line_options();
@@ -70,17 +68,9 @@ public:
   bool header;
 }; // class command_line_options
 
-// Handler function for asio::co_spawn to propagate exceptions to the caller
-void rethrow_exception_ptr(std::exception_ptr ptr)
-{
-  if (ptr) {
-    std::rethrow_exception(ptr);
-  }
-}
-
 net::awaitable<void> read_shadowmocap_datastream_frames(
   const command_line_options &options, shadowmocap::datastream<tcp> &stream,
-  net::stream_file &file)
+  asio::stream_file &file)
 {
   constexpr auto NumChannel = 8;
 
@@ -135,7 +125,7 @@ net::awaitable<void> read_shadowmocap_datastream(
   const std::string xml = "<configurable><Lq/><c/></configurable>";
   co_await write_message(stream, xml);
 
-  net::stream_file file(
+  asio::stream_file file(
     co_await net::this_coro::executor, options.filename,
     asio::stream_file::write_only | net::stream_file::create |
       net::stream_file::truncate);
@@ -155,7 +145,12 @@ bool stream_data_to_csv(const command_line_options &options)
 
     co_spawn(
       ctx, read_shadowmocap_datastream(options, endpoint),
-      rethrow_exception_ptr);
+      [](auto ptr) {
+        // Error function for to propagate exceptions to the caller
+        if (ptr) {
+          std::rethrow_exception(ptr);
+        }
+      });
 
     ctx.run();
 

@@ -80,6 +80,9 @@ net::awaitable<Message> read_message(datastream<Protocol> &stream)
   co_return message;
 }
 
+/**
+ * Write a binary message with its length header to the stream.
+ */
 template <typename Message, typename AsyncWriteStream>
 net::awaitable<void> write_message(AsyncWriteStream &s, const Message &message)
 {
@@ -106,8 +109,8 @@ net::awaitable<datastream<tcp>> open_connection(const tcp::endpoint &endpoint)
   tcp::socket socket(co_await net::this_coro::executor);
   co_await socket.async_connect(endpoint, net::use_awaitable);
 
-  // Turn off Nagle algorithm. We are streaming many small packets and intend to
-  // reduce latency at the expense of less efficient transfer of data.
+  // Turn off Nagle algorithm. We are streaming many small packets and intend
+  // to reduce latency at the expense of less efficient transfer of data.
   socket.set_option(tcp::no_delay(true));
 
   auto message = co_await read_message<std::vector<char>>(socket);
@@ -165,7 +168,7 @@ net::awaitable<void> watchdog(std::chrono::steady_clock::time_point &deadline)
 }
 
 /**
- * This function will close a socket that is reading in its own coroutine.
+ * Close a socket that is reading in its own coroutine.
  *
  * @code
  * co_spawn(ctx, async_read_loop(stream), ...);
