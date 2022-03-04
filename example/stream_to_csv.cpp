@@ -72,7 +72,7 @@ net::awaitable<void> read_shadowmocap_datastream_frames(
   const command_line_options &options, shadowmocap::datastream<tcp> &stream,
   asio::stream_file &file)
 {
-  constexpr auto NumChannel = 8;
+  constexpr auto ItemSize = 8;
 
   std::ostringstream line;
   line.setf(std::ios_base::fixed, std::ios_base::floatfield);
@@ -88,7 +88,7 @@ net::awaitable<void> read_shadowmocap_datastream_frames(
 
     int column = 0;
 
-    auto view = shadowmocap::make_message_view<NumChannel>(message);
+    auto view = shadowmocap::make_message_view<ItemSize>(message);
     for (auto &item : view) {
       for (auto &value : item.data) {
         if (column++ > 0) {

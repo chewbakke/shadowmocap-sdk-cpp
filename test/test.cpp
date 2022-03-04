@@ -1,6 +1,9 @@
 #define CATCH_CONFIG_MAIN
 #include "catch.hpp"
 
+//#include <boost/ut.hpp>
+//import boost.ut;
+
 #include <shadowmocap.hpp>
 
 #if SHADOWMOCAP_USE_BOOST_ASIO
@@ -34,7 +37,7 @@ read_shadowmocap_datastream_frames(shadowmocap::datastream<tcp> &stream)
   using namespace shadowmocap;
 
   constexpr auto Mask = channel::Lq | channel::c;
-  constexpr auto NumChannel = get_num_channel(Mask);
+  constexpr auto ItemSize = get_channel_mask_dimension(Mask);
 
   {
     // Create an XML string that lists the channels we want in order.
@@ -63,24 +66,24 @@ read_shadowmocap_datastream_frames(shadowmocap::datastream<tcp> &stream)
       throw std::runtime_error("name map must not be empty");
     }
 
-    REQUIRE(std::size(message) == NumItem * (2 + NumChannel) * 4);
+    REQUIRE(std::size(message) == NumItem * (2 + ItemSize) * 4);
 
-    if (std::size(message) != NumItem * (2 + NumChannel) * 4) {
+    if (std::size(message) != NumItem * (2 + ItemSize) * 4) {
       throw std::runtime_error("message size mismatch");
     }
 
-    auto view = shadowmocap::make_message_view<NumChannel>(message);
+    auto view = shadowmocap::make_message_view<ItemSize>(message);
 
-    REQUIRE(std::size(view) == NumItem);
+    REQUIRE(std::size(view) == ItemSize);
 
-    if (std::size(view) != NumItem) {
+    if (std::size(view) != ItemSize) {
       throw std::runtime_error("message item count mismatch");
     }
 
     for (auto &item : view) {
-      REQUIRE(item.length == NumChannel);
+      REQUIRE(item.length == ItemSize);
 
-      if (item.length != NumChannel) {
+      if (item.length != ItemSize) {
         throw std::runtime_error("message item channel size mismatch");
       }
 
