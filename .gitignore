@@ -10,5 +10,8 @@ build/obj
 build/.vs
 build/*.vcxproj.user
 
+stage/
+.vs/
+
 # Clang code coverage data files
 build/coverage.*

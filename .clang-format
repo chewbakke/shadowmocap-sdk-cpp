@@ -1,8 +1,3 @@
-#
-# @file  .clang-format
-# @brief Implements our C++ code formatting style as a clang-format
-#        configuration file.
-#
 BasedOnStyle: LLVM
 IndentWidth: 2
 ---
@@ -22,7 +17,7 @@ Cpp11BracedListStyle: true
 IncludeBlocks: Preserve
 IncludeCategories:
   # Public project include files
-  - Regex:    '<[[:alpha:]_]+.hpp>'
+  - Regex:    '<shadowmocap/?[[:alpha:]_]*.hpp>'
     Priority: 2
   # C++ Standard Library
   - Regex:    '<[[:alpha:]_]+>'
