@@ -223,7 +223,7 @@ constexpr unsigned get_channel_mask_dimension(unsigned mask)
   return result;
 }
 
-// Get a mask that activates all possible channels.
+// Get the bitmask that activates all possible channels.
 constexpr unsigned get_all_channel_mask()
 {
   return 0x0FFFFFFF;

@@ -90,13 +90,12 @@ net::awaitable<void> read_shadowmocap_datastream_frames(
 
     int column = 0;
 
-    if (!stream.names_.empty()) {
+    if (options.header && !stream.names_.empty()) {
       std::vector<std::string> channel_names;
       channel_names.reserve(ItemSize);
 
       for (auto c : {channel::Lq, channel::c}) {
-        
-        // Something like "Gq" or "a"
+        // Something like "Lq" or "a"
         const std::string prefix = get_channel_name(c);
 
         // Expand with axes "w", "x", "y", and "z"
@@ -119,7 +118,8 @@ net::awaitable<void> read_shadowmocap_datastream_frames(
           if (column++ > 0) {
             line << options.separator;
           }
-
+          
+          // Something like "Hips.ax" or "LeftLeg.Lqw"
           line << name << "." << channel_name;
         }
       }
