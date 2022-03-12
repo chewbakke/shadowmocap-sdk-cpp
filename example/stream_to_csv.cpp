@@ -1,9 +1,16 @@
 #include <shadowmocap.hpp>
 
+#if SHADOWMOCAP_USE_BOOST_ASIO
+#include <boost/asio/co_spawn.hpp>
+#include <boost/asio/experimental/awaitable_operators.hpp>
+#include <boost/asio/io_context.hpp>
+#include <boost/asio/stream_file.hpp>
+#else
 #include <asio/co_spawn.hpp>
 #include <asio/experimental/awaitable_operators.hpp>
 #include <asio/io_context.hpp>
 #include <asio/stream_file.hpp>
+#endif
 
 #include <chrono>
 #include <iostream>
@@ -70,7 +77,7 @@ public:
 
 net::awaitable<void> read_shadowmocap_datastream_frames(
   const command_line_options &options, shadowmocap::datastream<tcp> &stream,
-  asio::stream_file &file)
+  net::stream_file &file)
 {
   using namespace shadowmocap;
   using namespace std::chrono_literals;
@@ -118,7 +125,7 @@ net::awaitable<void> read_shadowmocap_datastream_frames(
           if (column++ > 0) {
             line << options.separator;
           }
-          
+
           // Something like "Hips.ax" or "LeftLeg.Lqw"
           line << name << "." << channel_name;
         }
@@ -169,9 +176,9 @@ net::awaitable<void> read_shadowmocap_datastream(
     make_channel_message<std::string>(channel::Lq | channel::c);
   co_await write_message(stream, xml);
 
-  asio::stream_file file(
+  net::stream_file file(
     co_await net::this_coro::executor, options.filename,
-    asio::stream_file::write_only | net::stream_file::create |
+    net::stream_file::write_only | net::stream_file::create |
       net::stream_file::truncate);
 
   co_await(
