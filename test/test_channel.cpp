@@ -1,30 +1,33 @@
-#include "catch.hpp"
+#include <boost/test/unit_test.hpp>
 
 #include <shadowmocap/channel.hpp>
 
 #include <string>
 
-TEST_CASE(
-  "bitwise operators work for channel enums and integer types",
-  "[shadowmocap][channel]")
+BOOST_AUTO_TEST_CASE(test_channel_bitwise_operators)
 {
   using namespace shadowmocap;
 
   auto mask = channel::Gq | channel::Gdq;
-  REQUIRE(mask == 3);
+  BOOST_REQUIRE(mask == 3);
 
   mask |= channel::a;
-  REQUIRE(mask == 259);
+  BOOST_REQUIRE(mask == 259);
 
   mask |= (channel::m | channel::g);
-  REQUIRE(mask == 1795);
+  BOOST_REQUIRE(mask == 1795);
 
-  REQUIRE((mask & channel::Gq) != 0);
-  REQUIRE((mask & channel::Lq) == 0);
+  BOOST_REQUIRE((mask & channel::Gq) != 0);
+  BOOST_REQUIRE((mask & channel::Lq) == 0);
 
-  REQUIRE((mask & (channel::Gq | channel::Lq)) != 0);
-  REQUIRE((mask & (channel::Lq | channel::Bq)) == 0);
+  BOOST_REQUIRE((mask & (channel::Gq | channel::Lq)) != 0);
+  BOOST_REQUIRE((mask & (channel::Lq | channel::Bq)) == 0);
 
   constexpr auto cmask = (channel::la | channel::a) & channel::Gq;
-  REQUIRE(cmask == 0);
+  BOOST_REQUIRE(cmask == 0);
+}
+
+BOOST_AUTO_TEST_CASE(test_channel_string_names)
+{
+  using namespace shadowmocap;
 }

@@ -1,8 +1,5 @@
-#define CATCH_CONFIG_MAIN
-#include "catch.hpp"
-
-//#include <boost/ut.hpp>
-//import boost.ut;
+#define BOOST_TEST_MODULE shadowmocap
+#include <boost/test/unit_test.hpp>
 
 #include <shadowmocap.hpp>
 
@@ -58,13 +55,13 @@ read_shadowmocap_datastream_frames(shadowmocap::datastream<tcp> &stream)
 
     const auto NumItem = std::size(stream.names_);
 
-    REQUIRE(NumItem > 0);
+    BOOST_REQUIRE(NumItem > 0);
 
     if (NumItem == 0) {
       throw std::runtime_error("name map must not be empty");
     }
 
-    REQUIRE(std::size(message) == NumItem * (2 + ItemSize) * 4);
+    BOOST_REQUIRE(std::size(message) == NumItem * (2 + ItemSize) * 4);
 
     if (std::size(message) != NumItem * (2 + ItemSize) * 4) {
       throw std::runtime_error("message size mismatch");
@@ -72,14 +69,14 @@ read_shadowmocap_datastream_frames(shadowmocap::datastream<tcp> &stream)
 
     auto view = shadowmocap::make_message_view<ItemSize>(message);
 
-    REQUIRE(std::size(view) == ItemSize);
+    BOOST_REQUIRE(std::size(view) == ItemSize);
 
     if (std::size(view) != ItemSize) {
       throw std::runtime_error("message item count mismatch");
     }
 
     for (auto &item : view) {
-      REQUIRE(item.length == ItemSize);
+      BOOST_REQUIRE(item.length == ItemSize);
 
       if (item.length != ItemSize) {
         throw std::runtime_error("message item channel size mismatch");
@@ -143,9 +140,7 @@ bool run()
   return false;
 }
 
-TEST_CASE(
-  "read 100 samples from the Shadow data service using a TCP socket",
-  "[shadowmocap][datastream]")
+BOOST_AUTO_TEST_CASE(test_read_shadowmocap_datastream)
 {
-  REQUIRE(run());
+  BOOST_REQUIRE(run());
 }
