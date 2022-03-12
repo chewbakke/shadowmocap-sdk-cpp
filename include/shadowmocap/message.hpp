@@ -30,10 +30,11 @@ struct message_view_item {
  * @param message Container of bytes.
  */
 template <unsigned N, typename Message>
-decltype(auto) make_message_view(Message &message)
+std::span<message_view_item<N>> make_message_view(Message &message)
 {
   using item_type = message_view_item<N>;
 
+  static_assert(sizeof(typename Message::value_type) == sizeof(char));
   static_assert(sizeof(item_type) == 2 * sizeof(unsigned) + N * sizeof(float));
   static_assert(offsetof(item_type, key) == 0);
   static_assert(offsetof(item_type, length) == 4);
@@ -41,13 +42,14 @@ decltype(auto) make_message_view(Message &message)
 
   // Sanity checks. Return empty container if we fail.
   if (std::empty(message) || (std::size(message) % sizeof(item_type) != 0)) {
-    return std::span<item_type>{};
+    return {};
   }
 
   auto *first = reinterpret_cast<item_type *>(std::data(message));
   auto count = std::size(message) / sizeof(item_type);
 
-  return std::span{first, count};
+  // return {first, first + count};
+  return {first, count};
 }
 
 /// Returns whether a binary message from the Shadow data service is metadata
