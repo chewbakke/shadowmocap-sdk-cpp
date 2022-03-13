@@ -34,4 +34,4 @@ build:
   verbosity: normal
 
 test_script:
-  - cmd: python test\mock_sdk_server.py out\test\%CONFIGURATION%\shadowmocap_test.exe
+  - cmd: python test\mock_sdk_server.py build\test\%CONFIGURATION%\shadowmocap_test.exe

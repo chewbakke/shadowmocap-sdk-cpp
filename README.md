@@ -1,8 +1,18 @@
 # ShadowMocap SDK C++
 
-## Compiler Support
+## Build test, benchmark, and example apps
 
-This project requires C++20 support for coroutines.
+This project is a header only library so you do not need to compile anything to
+use it in your projects.
+
+```console
+    cmake -B build .
+    cmake --build build
+```
+
+## Compiler support
+
+This project requires C++20 support for coroutines and span container.
 
 - Microsoft Visual Studio 2022
 - Clang 13
