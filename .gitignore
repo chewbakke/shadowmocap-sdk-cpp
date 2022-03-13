@@ -10,7 +10,7 @@ build/obj
 build/.vs
 build/*.vcxproj.user
 
-stage/
+out/
 .vs/
 
 # Clang code coverage data files
