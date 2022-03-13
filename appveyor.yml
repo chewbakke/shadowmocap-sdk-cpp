@@ -28,7 +28,7 @@ platform:
   - x64
 
 before_build:
-  - cmd:  
+  - cmd: cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE=c:\tools\vcpkg\scripts\buildsystems\vcpkg.cmake
 
 build:
   verbosity: normal
