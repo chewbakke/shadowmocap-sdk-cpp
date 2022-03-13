@@ -4,7 +4,7 @@
 
 namespace shadowmocap {
 
-/// Enumerate all possible measurements that are associated with one data node.
+/// Enumerate all possible measurements that are associated with one data node
 /**
  * Use as a bitmask to define the active channels. Tag data nodes with every
  * channel that is present or use to request specific measurements in a data
@@ -42,7 +42,9 @@ enum class channel : unsigned {
   Bq = 1 << 27
 }; // enum class channel
 
-/// Test a channel against a bitmask value.
+constexpr auto NumChannel = 28;
+
+/// Test a channel against a bitmask value
 /**
  * @code
  * unsigned mask = channel::Gq | channel::Gdq | channel::la;
@@ -57,7 +59,7 @@ constexpr unsigned operator&(T lhs, channel rhs)
   return static_cast<unsigned>(lhs) & static_cast<unsigned>(rhs);
 }
 
-/// Chain multiple channels into a bitmask value.
+/// Chain multiple channels into a bitmask value
 /**
  * @code
  * unsigned mask = channel::Gq | channel::Gdq | channel::la;
@@ -69,12 +71,14 @@ constexpr unsigned operator|(T lhs, channel rhs)
   return static_cast<unsigned>(lhs) | static_cast<unsigned>(rhs);
 }
 
-/// Build up a bitmask value iteratively.
+/// Build up a bitmask value of multiple channels iteratively
 /**
- *  unsigned mask = 0;
- *  mask |= channel::Gq;
- *  mask |= channel::Gdq;
- *  mask |= channel::la;
+ * @code
+ * unsigned mask = 0;
+ * mask |= channel::Gq;
+ * mask |= channel::Gdq;
+ * mask |= channel::la;
+ * @endcode
  */
 template <typename T>
 constexpr T &operator|=(T &lhs, channel rhs)
@@ -83,12 +87,12 @@ constexpr T &operator|=(T &lhs, channel rhs)
   return lhs;
 }
 
-/// Return the number of scalar values in a channel.
+/// Get the number of scalar values in a channel
 /**
- * dimension(channel::a) -> 3 (ax, ay, az)
- * dimension(channel::Lq) -> 4 (Lqw, Lqx, Lqy, Lqz)
+ * get_channel_dimension(channel::a) -> 3 (ax, ay, az)
+ * get_channel_dimension(channel::Lq) -> 4 (Lqw, Lqx, Lqy, Lqz)
  */
-constexpr unsigned get_dimension(channel c)
+constexpr unsigned get_channel_dimension(channel c)
 {
   switch (c) {
   case channel::Gq:
@@ -128,7 +132,12 @@ constexpr unsigned get_dimension(channel c)
   };
 }
 
-constexpr const char *get_name(channel c)
+/// Get the string name of a channel from its enumeration
+/**
+ * get_channel_name(channel::a) -> "a"
+ * get_channel_name(channel::Lq) -> "Lq"
+ */
+constexpr const char *get_channel_name(channel c)
 {
   switch (c) {
   case channel::Gq:
@@ -193,22 +202,28 @@ constexpr const char *get_name(channel c)
   }
 }
 
-constexpr unsigned get_num_channel(unsigned mask)
+/// Get the total number of all scalar values in a bitmask of channels
+/**
+ * Lq is a 4-vector, la is a 3-vector
+ * Concatenate Lq and la to get (Lqw, Lqx, Lqy, Lqz, lax, lay, laz)
+ *
+ * get_channel_mask_dimension(channel::Lq | channel::la) -> 7
+ */
+constexpr unsigned get_channel_mask_dimension(unsigned mask)
 {
-  constexpr auto NumChannel = 28;
-
   unsigned result = 0;
 
   for (auto i = 0; i < NumChannel; ++i) {
     auto c = static_cast<channel>(1 << i);
     if (mask & c) {
-      result += get_dimension(c);
+      result += get_channel_dimension(c);
     }
   }
 
   return result;
 }
 
+// Get the bitmask that activates all possible channels.
 constexpr unsigned get_all_channel_mask()
 {
   return 0x0FFFFFFF;

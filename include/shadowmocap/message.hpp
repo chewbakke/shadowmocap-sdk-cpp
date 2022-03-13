@@ -30,10 +30,11 @@ struct message_view_item {
  * @param message Container of bytes.
  */
 template <unsigned N, typename Message>
-decltype(auto) make_message_view(Message &message)
+std::span<message_view_item<N>> make_message_view(Message &message)
 {
   using item_type = message_view_item<N>;
 
+  static_assert(sizeof(typename Message::value_type) == sizeof(char));
   static_assert(sizeof(item_type) == 2 * sizeof(unsigned) + N * sizeof(float));
   static_assert(offsetof(item_type, key) == 0);
   static_assert(offsetof(item_type, length) == 4);
@@ -41,13 +42,14 @@ decltype(auto) make_message_view(Message &message)
 
   // Sanity checks. Return empty container if we fail.
   if (std::empty(message) || (std::size(message) % sizeof(item_type) != 0)) {
-    return std::span<item_type>{};
+    return {};
   }
 
   auto *first = reinterpret_cast<item_type *>(std::data(message));
   auto count = std::size(message) / sizeof(item_type);
 
-  return std::span{first, count};
+  // return {first, first + count};
+  return {first, count};
 }
 
 /// Returns whether a binary message from the Shadow data service is metadata
@@ -90,10 +92,14 @@ std::vector<std::string> parse_metadata(const Message &message)
 {
   // Use regular expressions to parse the very simple XML string so we do not
   // depend on a full XML library.
-  std::regex re("<node id=\"([^\"]+)\" key=\"(\\d+)\"");
+  std::regex re("<node\\s+id=\"([^\"]+)\"\\s+key=\"(\\d+)\"");
 
   auto first = std::regex_iterator(std::begin(message), std::end(message), re);
   auto last = decltype(first)();
+
+  if (first == last) {
+    return {};
+  }
 
   // Skip over the first <node id="default"> root level element.
   ++first;
@@ -133,8 +139,8 @@ Message make_channel_message(unsigned mask)
     sizeof(typename Message::value_type) == sizeof(char),
     "message is not bytes");
 
-  constexpr auto NumChannel = 28;
-  const std::string_view Pre = "<?xml version=\"1.0\"?><configurable>";
+  const std::string_view Pre =
+    "<?xml version=\"1.0\"?><configurable inactive=\"1\">";
   const std::string_view Post = "</configurable>";
 
   Message result(std::begin(Pre), std::end(Pre));
@@ -142,7 +148,7 @@ Message make_channel_message(unsigned mask)
   for (auto i = 0; i < NumChannel; ++i) {
     auto c = static_cast<channel>(1 << i);
     if (mask & c) {
-      const auto element = std::string("<") + get_name(c) + "/>";
+      const auto element = std::string("<") + get_channel_name(c) + "/>";
       result.insert(std::end(result), std::begin(element), std::end(element));
     }
   }

@@ -20,7 +20,9 @@ NAME := shadowmocap
 
 # Unit test executable
 TEST_TARGET := test_$(NAME)
-TEST_SRC := ../test/test.cpp
+TEST_SRC := \
+../test/test.cpp \
+../test/test_channel.cpp
 TEST_OBJ := $(patsubst %.cpp,%.o,$(TEST_SRC))
 # Run the mock server and unit test executable
 TEST_EXEC := python3 ../test/mock_sdk_server.py ./$(TEST_TARGET)
