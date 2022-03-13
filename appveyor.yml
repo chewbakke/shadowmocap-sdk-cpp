@@ -10,7 +10,7 @@ image: Visual Studio 2022
 install:
   - cd c:\tools\vcpkg\
   - git pull
-  - .\bootstrap-vcpkg.bat
+  - .\bootstrap-vcpkg.bat -disableMetrics
   - vcpkg install benchmark:x64-windows boost-asio:x64-windows boost-test:x64-windows
   - cd %APPVEYOR_BUILD_FOLDER%
 

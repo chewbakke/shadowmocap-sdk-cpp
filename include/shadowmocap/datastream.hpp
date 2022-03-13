@@ -153,13 +153,15 @@ void extend_deadline_for(
  *
  * This function is intended for use with awaitable operators in Asio.
  *
+ * @code
  * co_await(async_read_loop(stream) || watchdog(stream.deadline_));
+ * @endcode
  *
  * Where the async_read_loop function updates the deadline timer.
  *
  * @code
  * for (;;) {
- *   stream.deadline_ = + now() + 1s;
+ *   stream.deadline_ = now() + 1s;
  *   co_await net::async_read(stream.socket_, ...);
  * }
  * @endcode
@@ -179,6 +181,9 @@ watchdog(const std::chrono::steady_clock::time_point &deadline)
 
 /**
  * Close a socket that is reading in its own coroutine.
+ * 
+ * Intended for use to handle a timeout for a datastream where the
+ * async_read_loop function updates the deadline timer.
  *
  * @code
  * co_spawn(ctx, async_read_loop(stream), ...);
