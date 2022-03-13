@@ -6,7 +6,7 @@ FROM ubuntu
 # Install build dependencies from package repo
 RUN apt-get update && apt-get install -y \
   build-essential \
-  g++-10 \
+  # g++-10 \
   git \
   python3
 
