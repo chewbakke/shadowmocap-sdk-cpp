@@ -8,21 +8,30 @@ version: 1.0.{build}
 image: Visual Studio 2022
 
 install:
-  - git submodule init
-  - git submodule update
+  - cd c:\tools\vcpkg\
+  - git pull
+  - .\bootstrap-vcpkg.bat
+  - vcpkg install benchmark:x64-windows boost-asio:x64-windows boost-test:x64-windows
+  - cd %APPVEYOR_BUILD_FOLDER%
+
+cache:
+  - c:\tools\vcpkg\installed\
 
 branches:
   only:
     - main
 
-configuration: Release
+configuration:
+  - Release
 
 platform:
   - x64
-  - Win32
+
+before_build:
+  - cmd:  
 
 build:
-  verbosity: minimal
+  verbosity: normal
 
 test_script:
-  - cmd: python test\mock_sdk_server.py build\bin\%PLATFORM%\%CONFIGURATION%\test_shadowmocap.exe
+  - cmd: python test\mock_sdk_server.py out\test\%CONFIGURATION%\shadowmocap_test.exe
