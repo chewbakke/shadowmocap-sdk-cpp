@@ -2,8 +2,6 @@
 
 #include <shadowmocap/channel.hpp>
 
-#include <string>
-
 BOOST_AUTO_TEST_CASE(test_channel_bitwise_operators)
 {
   using namespace shadowmocap;
@@ -27,7 +25,55 @@ BOOST_AUTO_TEST_CASE(test_channel_bitwise_operators)
   BOOST_REQUIRE(cmask == 0);
 }
 
-BOOST_AUTO_TEST_CASE(test_channel_string_names)
+BOOST_AUTO_TEST_CASE(test_channel_dimension)
 {
   using namespace shadowmocap;
+
+  for (auto c : ChannelList) {
+    auto dim = get_channel_dimension(c);
+
+    BOOST_REQUIRE(dim == 1 || dim == 3 || dim == 4);
+  }
+
+  auto dim = get_channel_mask_dimension(get_all_channel_mask());
+  BOOST_REQUIRE(dim == 66);
+
+  dim = get_channel_mask_dimension(0);
+  BOOST_REQUIRE(dim == 0);
+}
+
+BOOST_AUTO_TEST_CASE(test_channel_string_name)
+{
+  using namespace shadowmocap;
+
+  static_assert(std::size(ChannelList) == NumChannel);
+
+  for (const auto& c : ChannelList) {
+    const char *name = get_channel_name(c);
+
+    BOOST_REQUIRE(name != nullptr);
+    BOOST_REQUIRE(strlen(name) > 0);
+  }
+}
+
+BOOST_AUTO_TEST_CASE(test_channel_mask_dimension)
+{
+  using namespace shadowmocap;
+
+  unsigned mask = 0;
+  for (auto c : ChannelList) {
+    mask |= c;
+  }
+
+  auto dim = get_channel_mask_dimension(mask);
+  BOOST_REQUIRE(dim == 66);
+
+  dim = get_channel_mask_dimension(get_all_channel_mask());
+  BOOST_REQUIRE(dim == 66);
+
+  dim = get_channel_mask_dimension(0);
+  BOOST_REQUIRE(dim == 0);
+
+  dim = get_channel_mask_dimension(channel::c | channel::Bq);
+  BOOST_REQUIRE(dim == 8);
 }
