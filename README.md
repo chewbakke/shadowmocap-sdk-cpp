@@ -6,7 +6,7 @@ This project is a header only library so you do not need to compile anything to
 use it in your projects.
 
 ```console
-    cmake -B build .
+    cmake -B build -S .
     cmake --build build
 ```
 
