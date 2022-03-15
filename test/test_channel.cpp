@@ -46,9 +46,9 @@ BOOST_AUTO_TEST_CASE(test_channel_string_name)
 {
   using namespace shadowmocap;
 
-  static_assert(std::size(ChannelList) == NumChannel);
+  static_assert(std::size(ChannelList) == 28);
 
-  for (const auto& c : ChannelList) {
+  for (auto c : ChannelList) {
     const char *name = get_channel_name(c);
 
     BOOST_REQUIRE(name != nullptr);

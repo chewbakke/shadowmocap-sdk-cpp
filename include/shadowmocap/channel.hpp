@@ -52,7 +52,7 @@ constexpr auto ChannelList = {
   channel::em, channel::eg,        channel::eq,      channel::ec,
   channel::p,  channel::atm,       channel::elev,    channel::Bq};
 
-// constexpr auto NumChannel = 28;
+constexpr auto NumChannel = std::size(ChannelList);
 
 /// Test a channel against a bitmask value
 /**
