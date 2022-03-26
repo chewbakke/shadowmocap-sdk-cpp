@@ -9,18 +9,24 @@
       "installRoot": "${projectDir}\\out\\install\\${name}",
       "cmakeCommandArgs": "",
       "buildCommandArgs": "",
-      "ctestCommandArgs": ""
+      "ctestCommandArgs": "",
+      "enableClangTidyCodeAnalysis": true,
+      "clangTidyChecks": "-*,clang-analyzer-*,-clang-analyzer-cplusplus*",
+      "enableMicrosoftCodeAnalysis": true
     },
     {
       "name": "x64-Release",
       "generator": "Ninja",
       "configurationType": "RelWithDebInfo",
+      "inheritEnvironments": [ "msvc_x64_x64" ],
       "buildRoot": "${projectDir}\\out\\build\\${name}",
       "installRoot": "${projectDir}\\out\\install\\${name}",
       "cmakeCommandArgs": "",
       "buildCommandArgs": "",
       "ctestCommandArgs": "",
-      "inheritEnvironments": [ "msvc_x64_x64" ]
+      "enableClangTidyCodeAnalysis": true,
+      "clangTidyChecks": "-*,clang-analyzer-*,-clang-analyzer-cplusplus*",
+      "enableMicrosoftCodeAnalysis": true
     }
   ]
 }

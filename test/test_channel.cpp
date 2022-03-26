@@ -1,48 +1,42 @@
-#include <boost/test/unit_test.hpp>
+#include <catch.hpp>
 
 #include <shadowmocap/channel.hpp>
 
-BOOST_AUTO_TEST_CASE(test_channel_bitwise_operators)
+TEST_CASE("channel_bitwise_operators")
 {
   using namespace shadowmocap;
 
   auto mask = channel::Gq | channel::Gdq;
-  BOOST_REQUIRE(mask == 3);
+  REQUIRE(mask == 3);
 
   mask |= channel::a;
-  BOOST_REQUIRE(mask == 259);
+  REQUIRE(mask == 259);
 
   mask |= (channel::m | channel::g);
-  BOOST_REQUIRE(mask == 1795);
+  REQUIRE(mask == 1795);
 
-  BOOST_REQUIRE((mask & channel::Gq) != 0);
-  BOOST_REQUIRE((mask & channel::Lq) == 0);
+  REQUIRE((mask & channel::Gq) != 0);
+  REQUIRE((mask & channel::Lq) == 0);
 
-  BOOST_REQUIRE((mask & (channel::Gq | channel::Lq)) != 0);
-  BOOST_REQUIRE((mask & (channel::Lq | channel::Bq)) == 0);
+  REQUIRE((mask & (channel::Gq | channel::Lq)) != 0);
+  REQUIRE((mask & (channel::Lq | channel::Bq)) == 0);
 
   constexpr auto cmask = (channel::la | channel::a) & channel::Gq;
-  BOOST_REQUIRE(cmask == 0);
+  REQUIRE(cmask == 0);
 }
 
-BOOST_AUTO_TEST_CASE(test_channel_dimension)
+TEST_CASE("channel_dimension")
 {
   using namespace shadowmocap;
 
   for (auto c : ChannelList) {
     auto dim = get_channel_dimension(c);
 
-    BOOST_REQUIRE(dim == 1 || dim == 3 || dim == 4);
+    REQUIRE(dim == 1 || dim == 3 || dim == 4);
   }
-
-  auto dim = get_channel_mask_dimension(get_all_channel_mask());
-  BOOST_REQUIRE(dim == 66);
-
-  dim = get_channel_mask_dimension(0);
-  BOOST_REQUIRE(dim == 0);
 }
 
-BOOST_AUTO_TEST_CASE(test_channel_string_name)
+TEST_CASE("channel_string_names")
 {
   using namespace shadowmocap;
 
@@ -51,12 +45,12 @@ BOOST_AUTO_TEST_CASE(test_channel_string_name)
   for (auto c : ChannelList) {
     const char *name = get_channel_name(c);
 
-    BOOST_REQUIRE(name != nullptr);
-    BOOST_REQUIRE(strlen(name) > 0);
+    REQUIRE(name != nullptr);
+    REQUIRE(strlen(name) > 0);
   }
 }
 
-BOOST_AUTO_TEST_CASE(test_channel_mask_dimension)
+TEST_CASE("channel_mask_dimension")
 {
   using namespace shadowmocap;
 
@@ -66,14 +60,14 @@ BOOST_AUTO_TEST_CASE(test_channel_mask_dimension)
   }
 
   auto dim = get_channel_mask_dimension(mask);
-  BOOST_REQUIRE(dim == 66);
+  REQUIRE(dim == 66);
 
   dim = get_channel_mask_dimension(get_all_channel_mask());
-  BOOST_REQUIRE(dim == 66);
+  REQUIRE(dim == 66);
 
   dim = get_channel_mask_dimension(0);
-  BOOST_REQUIRE(dim == 0);
+  REQUIRE(dim == 0);
 
   dim = get_channel_mask_dimension(channel::c | channel::Bq);
-  BOOST_REQUIRE(dim == 8);
+  REQUIRE(dim == 8);
 }

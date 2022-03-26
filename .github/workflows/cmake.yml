@@ -1,0 +1,99 @@
+#
+# Workflow for C++ continuous integration (CI) with cmake and vcpkg.
+# - Run on pull request and push to main branch
+# - Install dependencies with vcpkg
+# - Use CMake to configure and build. Use CTest to run unit tests
+#
+name: Continuous Integration
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      #
+      # https://docs.github.com/en/actions/using-jobs/using-a-build-matrix-for-your-jobs
+      #
+      matrix:
+        include:
+        - os: windows-latest
+          VCPKG_CACHE: ~/AppData/Local
+        - os: macos-latest
+          VCPKG_CACHE: ~/.cache
+        - os: ubuntu-latest
+          VCPKG_CACHE: ~/.cache
+
+    env:
+      #
+      # Customize the CMake build type (Release, Debug, RelWithDebInfo, etc.)
+      #
+      BUILD_TYPE: Release
+
+    steps:
+    - uses: actions/checkout@v3
+    
+    - uses: actions/cache@v3
+      #
+      # Enable package binary caching
+      # 
+      # https://github.com/actions/cache
+      # https://github.com/microsoft/vcpkg/blob/master/docs/users/binarycaching.md
+      #
+      # Windows: $APPDATA/vcpkg/archives
+      # Linux/macOS: $HOME/.cache/vcpkg/archives
+      #
+      with:
+        path: ${{ matrix.VCPKG_CACHE }}/vcpkg/archives
+        key: ${{ runner.os }}-moose-${{ hashFiles('vcpkg.json') }}
+
+    - name: Install package manager
+      #
+      # We are using vcpkg Manifest Mode. The CMake integration will bootstrap
+      # vcpkg and install dependencies for our current build environment! This 
+      # is awesome because we do not need to set the package triplet
+      # explicitly.
+      #
+      # https://github.com/microsoft/vcpkg/blob/master/docs/users/manifests.md
+      #
+      run: >
+        git clone
+        https://github.com/Microsoft/vcpkg.git
+        ${{ github.workspace }}/build/vcpkg/
+
+    - name: Configure
+      #
+      # Configure CMake in the "build" subdirectory. This will also install
+      # vcpkg dependencies from our project manifest file automagically.
+      #
+      run: >
+        cmake 
+        -B ${{ github.workspace }}/build
+        -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+        -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/build/vcpkg/scripts/buildsystems/vcpkg.cmake
+
+    - name: Build
+      #
+      # Build all enabled programs with the given configuration.
+      #
+      run: >
+        cmake
+        --build ${{ github.workspace }}/build
+        --config ${{ env.BUILD_TYPE }}
+
+    - name: Test
+      #
+      # Execute tests defined by the CMake configuration. In our project this
+      # is any executable target that has an associated add_test(NAME target).
+      #
+      # Example:
+      #   add_executable(unit_test unit_test.cpp)
+      #   add_test(UnitTestName unit_test)
+      #
+      working-directory: ${{ github.workspace }}/build
+      run: ctest -C ${{ env.BUILD_TYPE }}

@@ -14,16 +14,14 @@ RUN apt-get update && apt-get install -y \
     python3 \
     zip
 
-# Install vcpkg and use it to download dependencies
-RUN git clone https://github.com/microsoft/vcpkg.git && \
-    ./vcpkg/bootstrap-vcpkg.sh -disableMetrics && \
-    ./vcpkg/vcpkg install benchmark boost-asio boost-test
+# Install vcpkg
+RUN git clone https://github.com/microsoft/vcpkg.git
 
 # Checkout repo
 RUN git clone -b develop \
     https://github.com/luketokheim/shadowmocap-sdk-cpp.git
 
-# Configure build
+# Configure build and download dependencies (from vcpkg manifest)
 RUN cmake -B build -S shadowmocap-sdk-cpp \
     -DCMAKE_TOOLCHAIN_FILE=/vcpkg/scripts/buildsystems/vcpkg.cmake
 

@@ -1,18 +1,6 @@
-# macOS and Linux object files
-*.o
-
-# macOS and Linux build targets
-build/test_shadowmocap
-
-# Windows build and Visual Studio working files
-build/bin
-build/obj
-build/.vs
-build/*.vcxproj.user
-
-out/
+# Visual Studio
 .vs/
-build/
+out/
 
-# Clang code coverage data files
-build/coverage.*
+# We use this path for CI and command line cmake
+build/

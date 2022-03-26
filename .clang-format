@@ -1,7 +1,6 @@
 BasedOnStyle: LLVM
-IndentWidth: 2
----
 Language: Cpp
+AccessModifierOffset: -4
 AlignAfterOpenBracket: AlwaysBreak
 AlignEscapedNewlines: DontAlign
 AlwaysBreakTemplateDeclarations: true
@@ -11,9 +10,10 @@ BraceWrapping:
   AfterFunction: true
   SplitEmptyFunction: true
 CompactNamespaces: true
-ConstructorInitializerIndentWidth: 2
-ContinuationIndentWidth: 2
+ConstructorInitializerIndentWidth: 4
+ContinuationIndentWidth: 4
 Cpp11BracedListStyle: true
+FixNamespaceComments: true
 IncludeBlocks: Preserve
 IncludeCategories:
   # Public project include files
@@ -28,5 +28,6 @@ IncludeCategories:
   # Everything else, third party library headers
   - Regex:    '.*'
     Priority: 1
+# IndentAccessModifiers: false
+IndentWidth: 4
 Standard: Cpp11
-FixNamespaceComments: true

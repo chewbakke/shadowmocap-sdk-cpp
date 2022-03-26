@@ -1,0 +1,9 @@
+{
+  "name": "shadowmocap",
+  "version": "0.1.0",
+  "dependencies": [
+    "asio",
+    "benchmark",
+    "catch2"
+  ]
+}
