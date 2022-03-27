@@ -17,9 +17,9 @@ namespace shadowmocap {
  */
 template <unsigned N>
 struct message_view_item {
-  unsigned key;
-  unsigned length;
-  float data[N];
+    unsigned key;
+    unsigned length;
+    float data[N];
 }; // struct message_view_item
 
 /// Parse a binary message and return an iterable container of items.
@@ -32,24 +32,25 @@ struct message_view_item {
 template <unsigned N, typename Message>
 std::span<message_view_item<N>> make_message_view(Message &message)
 {
-  using item_type = message_view_item<N>;
+    using item_type = message_view_item<N>;
 
-  static_assert(sizeof(typename Message::value_type) == sizeof(char));
-  static_assert(sizeof(item_type) == 2 * sizeof(unsigned) + N * sizeof(float));
-  static_assert(offsetof(item_type, key) == 0);
-  static_assert(offsetof(item_type, length) == 4);
-  static_assert(offsetof(item_type, data) == 8);
+    static_assert(sizeof(typename Message::value_type) == sizeof(char));
+    static_assert(
+        sizeof(item_type) == 2 * sizeof(unsigned) + N * sizeof(float));
+    static_assert(offsetof(item_type, key) == 0);
+    static_assert(offsetof(item_type, length) == 4);
+    static_assert(offsetof(item_type, data) == 8);
 
-  // Sanity checks. Return empty container if we fail.
-  if (std::empty(message) || (std::size(message) % sizeof(item_type) != 0)) {
-    return {};
-  }
+    // Sanity checks. Return empty container if we fail.
+    if (std::empty(message) || (std::size(message) % sizeof(item_type) != 0)) {
+        return {};
+    }
 
-  auto *first = reinterpret_cast<item_type *>(std::data(message));
-  auto count = std::size(message) / sizeof(item_type);
+    auto *first = reinterpret_cast<item_type *>(std::data(message));
+    auto count = std::size(message) / sizeof(item_type);
 
-  // return {first, first + count};
-  return {first, count};
+    // return {first, first + count};
+    return {first, count};
 }
 
 /// Returns whether a binary message from the Shadow data service is metadata
@@ -62,18 +63,18 @@ std::span<message_view_item<N>> make_message_view(Message &message)
 template <typename Message>
 bool is_metadata(const Message &message)
 {
-  const std::string XmlMagic = "<?xml";
+    const std::string XmlMagic = "<?xml";
 
-  if (std::size(message) < std::size(XmlMagic)) {
-    return false;
-  }
+    if (std::size(message) < std::size(XmlMagic)) {
+        return false;
+    }
 
-  if (!std::equal(
-        std::begin(XmlMagic), std::end(XmlMagic), std::begin(message))) {
-    return false;
-  }
+    if (!std::equal(
+            std::begin(XmlMagic), std::end(XmlMagic), std::begin(message))) {
+        return false;
+    }
 
-  return true;
+    return true;
 }
 
 /// Parse a metadata message from the Shadow data service and return a flat list
@@ -90,35 +91,36 @@ bool is_metadata(const Message &message)
 template <typename Message>
 std::vector<std::string> parse_metadata(const Message &message)
 {
-  // Use regular expressions to parse the very simple XML string so we do not
-  // depend on a full XML library.
-  std::regex re("<node\\s+id=\"([^\"]+)\"\\s+key=\"(\\d+)\"");
+    // Use regular expressions to parse the very simple XML string so we do not
+    // depend on a full XML library.
+    std::regex re("<node\\s+id=\"([^\"]+)\"\\s+key=\"(\\d+)\"");
 
-  auto first = std::regex_iterator(std::begin(message), std::end(message), re);
-  auto last = decltype(first)();
+    auto first =
+        std::regex_iterator(std::begin(message), std::end(message), re);
+    auto last = decltype(first)();
 
-  if (first == last) {
-    return {};
-  }
+    if (first == last) {
+        return {};
+    }
 
-  // Skip over the first <node id="default"> root level element.
-  ++first;
+    // Skip over the first <node id="default"> root level element.
+    ++first;
 
-  auto num_node = std::distance(first, last);
-  if (num_node == 0) {
-    return {};
-  }
+    auto num_node = std::distance(first, last);
+    if (num_node == 0) {
+        return {};
+    }
 
-  // Create a list of id string in order.
-  // <node id="A"/><node id="B"/> -> ["A", "B"]
-  std::vector<std::string> result(num_node);
+    // Create a list of id string in order.
+    // <node id="A"/><node id="B"/> -> ["A", "B"]
+    std::vector<std::string> result(num_node);
 
-  std::transform(first, last, std::begin(result), [](auto &match) {
-    // Return submatch #1 as a string, the id="..." attribute.
-    return match.str(1);
-  });
+    std::transform(first, last, std::begin(result), [](auto &match) {
+        // Return submatch #1 as a string, the id="..." attribute.
+        return match.str(1);
+    });
 
-  return result;
+    return result;
 }
 
 /// Create an XML metadata string that lists the channels we want.
@@ -135,26 +137,27 @@ std::vector<std::string> parse_metadata(const Message &message)
 template <typename Message>
 Message make_channel_message(unsigned mask)
 {
-  static_assert(
-    sizeof(typename Message::value_type) == sizeof(char),
-    "message is not bytes");
+    static_assert(
+        sizeof(typename Message::value_type) == sizeof(char),
+        "message is not bytes");
 
-  const std::string_view Pre =
-    "<?xml version=\"1.0\"?><configurable inactive=\"1\">";
-  const std::string_view Post = "</configurable>";
+    const std::string_view Pre =
+        "<?xml version=\"1.0\"?><configurable inactive=\"1\">";
+    const std::string_view Post = "</configurable>";
 
-  Message result(std::begin(Pre), std::end(Pre));
+    Message result(std::begin(Pre), std::end(Pre));
 
-  for (auto c : ChannelList) {
-    if (mask & c) {
-      const auto element = std::string("<") + get_channel_name(c) + "/>";
-      result.insert(std::end(result), std::begin(element), std::end(element));
+    for (auto c : ChannelList) {
+        if (mask & c) {
+            const auto element = std::string("<") + get_channel_name(c) + "/>";
+            result.insert(
+                std::end(result), std::begin(element), std::end(element));
+        }
     }
-  }
 
-  result.insert(std::end(result), std::begin(Post), std::end(Post));
+    result.insert(std::end(result), std::begin(Post), std::end(Post));
 
-  return result;
+    return result;
 }
 
 } // namespace shadowmocap
