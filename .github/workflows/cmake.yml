@@ -26,7 +26,7 @@ jobs:
           VCPKG_CACHE: ~/AppData/Local
         - os: macos-latest
           VCPKG_CACHE: ~/.cache
-        - os: ubuntu-latest
+         - os: ubuntu-devel
           VCPKG_CACHE: ~/.cache
 
     env:

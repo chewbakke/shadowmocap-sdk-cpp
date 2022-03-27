@@ -22,12 +22,12 @@ struct message_view_item {
   float data[N];
 }; // struct message_view_item
 
-/// Parse a binary message and returns an iterable container of items.
+/// Parse a binary message and return an iterable container of items.
 /**
  * message = [item0, ..., itemM)
  * item = [uint = key] [uint = N] [float0, ..., floatN)
  *
- * @param message Container of bytes.
+ * @param message Container of bytes like std::string or std::vector<char>.
  */
 template <unsigned N, typename Message>
 std::span<message_view_item<N>> make_message_view(Message &message)
@@ -145,8 +145,7 @@ Message make_channel_message(unsigned mask)
 
   Message result(std::begin(Pre), std::end(Pre));
 
-  for (auto i = 0; i < NumChannel; ++i) {
-    auto c = static_cast<channel>(1 << i);
+  for (auto c : ChannelList) {
     if (mask & c) {
       const auto element = std::string("<") + get_channel_name(c) + "/>";
       result.insert(std::end(result), std::begin(element), std::end(element));

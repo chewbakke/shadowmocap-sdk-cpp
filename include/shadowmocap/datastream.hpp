@@ -46,6 +46,7 @@ public:
 template <typename Message, typename AsyncReadStream>
 net::awaitable<Message> read_message(AsyncReadStream &s)
 {
+  constexpr auto MaxMessageLength = (1 << 16);
   static_assert(
     sizeof(typename Message::value_type) == sizeof(char),
     "message is not bytes");
@@ -55,6 +56,10 @@ net::awaitable<Message> read_message(AsyncReadStream &s)
     s, net::buffer(&length, sizeof(length)), net::use_awaitable);
 
   length = ntohl(length);
+  if (length > MaxMessageLength) {
+    throw std::runtime_error("message length is not valid");
+  }
+
   Message message(length, 0);
 
   co_await net::async_read(s, net::buffer(message), net::use_awaitable);

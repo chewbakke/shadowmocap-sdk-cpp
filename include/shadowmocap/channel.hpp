@@ -42,7 +42,17 @@ enum class channel : unsigned {
   Bq = 1 << 27
 }; // enum class channel
 
-constexpr auto NumChannel = 28;
+// Iterable list of all channels
+constexpr auto ChannelList = {
+  channel::Gq, channel::Gdq,       channel::Lq,      channel::r,
+  channel::la, channel::lv,        channel::lt,      channel::c,
+  channel::a,  channel::m,         channel::g,       channel::temp,
+  channel::A,  channel::M,         channel::G,       channel::Temp,
+  channel::dt, channel::timestamp, channel::systime, channel::ea,
+  channel::em, channel::eg,        channel::eq,      channel::ec,
+  channel::p,  channel::atm,       channel::elev,    channel::Bq};
+
+constexpr auto NumChannel = std::size(ChannelList);
 
 /// Test a channel against a bitmask value
 /**
@@ -213,8 +223,7 @@ constexpr unsigned get_channel_mask_dimension(unsigned mask)
 {
   unsigned result = 0;
 
-  for (auto i = 0; i < NumChannel; ++i) {
-    auto c = static_cast<channel>(1 << i);
+  for (auto c : ChannelList) {
     if (mask & c) {
       result += get_channel_dimension(c);
     }
