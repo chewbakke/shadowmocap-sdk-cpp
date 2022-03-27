@@ -32,7 +32,7 @@ TEST_CASE("channel_dimension")
   for (auto c : ChannelList) {
     auto dim = get_channel_dimension(c);
 
-    REQUIRE(dim == 1 || dim == 3 || dim == 4);
+    REQUIRE((dim == 1 || dim == 3 || dim == 4));
   }
 }
 

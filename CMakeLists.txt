@@ -27,16 +27,6 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
     # add_subdirectory(example)
 endif()
 
-add_test(
-    NAME
-        UnitTest
-    COMMAND
-        "${CMAKE_CTEST_COMMAND}"
-            --build-and-test "${My_SOURCE_DIR}/test"
-                "${CMAKE_CURRENT_BINARY_DIR}/test"
-            --build-generator "${CMAKE_GENERATOR}"
-            --test-command "${CMAKE_CTEST_COMMAND}")
-
 # Unit test, benchmark, and example apps
 # enable_testing()
 # add_subdirectory(test)

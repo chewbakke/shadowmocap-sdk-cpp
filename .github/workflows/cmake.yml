@@ -28,6 +28,7 @@ jobs:
           VCPKG_CACHE: ~/.cache
         - os: ubuntu-latest
           VCPKG_CACHE: ~/.cache
+          COMPILER: gcc-10
 
     env:
       #

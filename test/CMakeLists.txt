@@ -1,6 +1,8 @@
 find_package(Catch2 CONFIG REQUIRED)
+find_package(Python)
 
 add_executable(shadowmocap_test test.cpp test_channel.cpp)
+target_link_libraries(shadowmocap_test PRIVATE shadowmocap Catch2::Catch2)
 
 # find_program(LLVM_COV_PATH llvm-cov)
 # if(LLVM_COV_PATH)
@@ -12,8 +14,10 @@ add_executable(shadowmocap_test test.cpp test_channel.cpp)
 #         -fprofile-instr-generate -fcoverage-mapping)
 # endif()
 
-target_link_libraries(shadowmocap_test PRIVATE shadowmocap Catch2::Catch2)
-
+# Run our mock server to test client communication
+# python test/mock_sdk_server.py shadowmocap_test
 add_test(
-    test
-    python ${CMAKE_CURRENT_SOURCE_DIR}/mock_sdk_server.py $<TARGET_FILE:shadowmocap_test>)
+    NAME test
+    COMMAND ${Python_EXECUTABLE}
+    ${CMAKE_CURRENT_SOURCE_DIR}/mock_sdk_server.py
+    $<TARGET_FILE:shadowmocap_test>)
