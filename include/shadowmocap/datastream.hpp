@@ -18,6 +18,7 @@
 
 #include <chrono>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace shadowmocap {
@@ -85,7 +86,7 @@ auto read_message(datastream<Protocol> &stream) -> net::awaitable<Message>
  * Write a binary message with its length header to the stream.
  */
 template <typename AsyncWriteStream>
-auto write_message(AsyncWriteStream &s, std::span<char> message)
+auto write_message(AsyncWriteStream &s, std::string_view message)
     -> net::awaitable<void>
 {
     unsigned length = htonl(static_cast<unsigned>(std::size(message)));
@@ -96,7 +97,7 @@ auto write_message(AsyncWriteStream &s, std::span<char> message)
 }
 
 template <typename Protocol>
-auto write_message(datastream<Protocol> &stream, std::span<char> message)
+auto write_message(datastream<Protocol> &stream, std::string_view message)
     -> net::awaitable<void>
 {
     co_await write_message(stream.socket_, message);
@@ -112,7 +113,7 @@ auto open_connection(const tcp::endpoint &endpoint)
     // to reduce latency at the expense of less efficient transfer of data.
     socket.set_option(tcp::no_delay(true));
 
-    auto message = co_await read_message<std::vector<char>>(socket);
+    auto message = co_await read_message<std::string>(socket);
 
     // Shadow data service responds with its version and name.
     // <service version="x.y.z" name="configurable"/>
