@@ -29,12 +29,13 @@ struct message_view_item {
  *
  * @param message Container of bytes like std::string or std::vector<char>.
  */
-template <unsigned N, typename Message>
-std::span<message_view_item<N>> make_message_view(Message &message)
+template <unsigned N>
+auto make_message_view(std::span<char> message)
+    -> std::span<message_view_item<N>>
 {
     using item_type = message_view_item<N>;
 
-    static_assert(sizeof(typename Message::value_type) == sizeof(char));
+    // static_assert(sizeof(typename Message::value_type) == sizeof(char));
     static_assert(
         sizeof(item_type) == 2 * sizeof(unsigned) + N * sizeof(float));
     static_assert(offsetof(item_type, key) == 0);
@@ -49,7 +50,6 @@ std::span<message_view_item<N>> make_message_view(Message &message)
     auto *first = reinterpret_cast<item_type *>(std::data(message));
     auto count = std::size(message) / sizeof(item_type);
 
-    // return {first, first + count};
     return {first, count};
 }
 
@@ -60,8 +60,7 @@ std::span<message_view_item<N>> make_message_view(Message &message)
  *
  * @return @c true if the message is an XML string, otherwise @c false.
  */
-template <typename Message>
-bool is_metadata(const Message &message)
+auto is_metadata(std::span<char> message) -> bool
 {
     const std::string XmlMagic = "<?xml";
 
@@ -88,8 +87,7 @@ bool is_metadata(const Message &message)
  *
  * @return List of node string names in the same order as measurement data.
  */
-template <typename Message>
-std::vector<std::string> parse_metadata(const Message &message)
+auto parse_metadata(std::span<char> message) -> std::vector<std::string>
 {
     // Use regular expressions to parse the very simple XML string so we do not
     // depend on a full XML library.
@@ -135,7 +133,7 @@ std::vector<std::string> parse_metadata(const Message &message)
  * @endcode
  */
 template <typename Message>
-Message make_channel_message(unsigned mask)
+auto make_channel_message(unsigned mask) -> Message
 {
     static_assert(
         sizeof(typename Message::value_type) == sizeof(char),
