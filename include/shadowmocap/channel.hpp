@@ -54,10 +54,6 @@ constexpr auto ChannelList = {
 
 constexpr auto NumChannel = std::size(ChannelList);
 
-template <typename T>
-concept Maskable =
-    std::is_integral<T>::value || std::is_same<T, channel>::value;
-
 /// Test a channel against a bitmask value
 /**
  * @code
@@ -67,9 +63,12 @@ concept Maskable =
  * }
  * @endcode
  */
-template <Maskable T>
+template <typename T>
 constexpr auto operator&(T lhs, channel rhs) -> unsigned
 {
+    static_assert(
+        std::is_integral<T>::value || std::is_same<T, channel>::value);
+
     return static_cast<unsigned>(lhs) & static_cast<unsigned>(rhs);
 }
 
@@ -79,9 +78,12 @@ constexpr auto operator&(T lhs, channel rhs) -> unsigned
  * unsigned mask = channel::Gq | channel::Gdq | channel::la;
  * @endcode
  */
-template <Maskable T>
+template <typename T>
 constexpr auto operator|(T lhs, channel rhs) -> unsigned
 {
+    static_assert(
+        std::is_integral<T>::value || std::is_same<T, channel>::value);
+
     return static_cast<unsigned>(lhs) | static_cast<unsigned>(rhs);
 }
 
