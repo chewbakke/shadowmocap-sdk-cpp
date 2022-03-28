@@ -44,7 +44,7 @@ public:
 }; // class datastream
 
 template <typename Message, typename AsyncReadStream>
-net::awaitable<Message> read_message(AsyncReadStream &s)
+auto read_message(AsyncReadStream &s) -> net::awaitable<Message>
 {
     constexpr auto MaxMessageLength = (1 << 16);
     static_assert(
@@ -68,7 +68,7 @@ net::awaitable<Message> read_message(AsyncReadStream &s)
 }
 
 template <typename Message, typename Protocol>
-net::awaitable<Message> read_message(datastream<Protocol> &stream)
+auto read_message(datastream<Protocol> &stream) -> net::awaitable<Message>
 {
     auto message = co_await read_message<Message>(stream.socket_);
 
@@ -84,13 +84,10 @@ net::awaitable<Message> read_message(datastream<Protocol> &stream)
 /**
  * Write a binary message with its length header to the stream.
  */
-template <typename Message, typename AsyncWriteStream>
-net::awaitable<void> write_message(AsyncWriteStream &s, const Message &message)
+template <typename AsyncWriteStream>
+auto write_message(AsyncWriteStream &s, std::span<char> message)
+    -> net::awaitable<void>
 {
-    static_assert(
-        sizeof(typename Message::value_type) == sizeof(char),
-        "message is not bytes");
-
     unsigned length = htonl(static_cast<unsigned>(std::size(message)));
     co_await net::async_write(
         s, net::buffer(&length, sizeof(length)), net::use_awaitable);
@@ -98,14 +95,15 @@ net::awaitable<void> write_message(AsyncWriteStream &s, const Message &message)
     co_await net::async_write(s, net::buffer(message), net::use_awaitable);
 }
 
-template <typename Message, typename Protocol>
-net::awaitable<void>
-write_message(datastream<Protocol> &stream, const Message &message)
+template <typename Protocol>
+auto write_message(datastream<Protocol> &stream, std::span<char> message)
+    -> net::awaitable<void>
 {
     co_await write_message(stream.socket_, message);
 }
 
-net::awaitable<datastream<tcp>> open_connection(const tcp::endpoint &endpoint)
+auto open_connection(const tcp::endpoint &endpoint)
+    -> net::awaitable<datastream<tcp>>
 {
     tcp::socket socket(co_await net::this_coro::executor);
     co_await socket.async_connect(endpoint, net::use_awaitable);
@@ -171,8 +169,8 @@ void extend_deadline_for(
  * }
  * @endcode
  */
-net::awaitable<void>
-watchdog(const std::chrono::steady_clock::time_point &deadline)
+auto watchdog(const std::chrono::steady_clock::time_point &deadline)
+    -> net::awaitable<void>
 {
     net::steady_timer timer(co_await net::this_coro::executor);
 
@@ -196,7 +194,7 @@ watchdog(const std::chrono::steady_clock::time_point &deadline)
  * @endcode
  */
 template <typename Protocol>
-net::awaitable<void> watchdog(datastream<Protocol> &stream)
+auto watchdog(datastream<Protocol> &stream) -> net::awaitable<void>
 {
     co_await watchdog(stream.deadline_);
 
