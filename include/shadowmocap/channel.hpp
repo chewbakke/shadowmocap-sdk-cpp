@@ -54,6 +54,10 @@ constexpr auto ChannelList = {
 
 constexpr auto NumChannel = std::size(ChannelList);
 
+template <typename T>
+concept Maskable =
+    std::is_integral<T>::value || std::is_same<T, channel>::value;
+
 /// Test a channel against a bitmask value
 /**
  * @code
@@ -63,8 +67,8 @@ constexpr auto NumChannel = std::size(ChannelList);
  * }
  * @endcode
  */
-template <typename T>
-constexpr unsigned operator&(T lhs, channel rhs)
+template <Maskable T>
+constexpr auto operator&(T lhs, channel rhs) -> unsigned
 {
     return static_cast<unsigned>(lhs) & static_cast<unsigned>(rhs);
 }
@@ -75,8 +79,8 @@ constexpr unsigned operator&(T lhs, channel rhs)
  * unsigned mask = channel::Gq | channel::Gdq | channel::la;
  * @endcode
  */
-template <typename T>
-constexpr unsigned operator|(T lhs, channel rhs)
+template <Maskable T>
+constexpr auto operator|(T lhs, channel rhs) -> unsigned
 {
     return static_cast<unsigned>(lhs) | static_cast<unsigned>(rhs);
 }
@@ -90,10 +94,9 @@ constexpr unsigned operator|(T lhs, channel rhs)
  * mask |= channel::la;
  * @endcode
  */
-template <typename T>
-constexpr T &operator|=(T &lhs, channel rhs)
+constexpr auto operator|=(unsigned &lhs, channel rhs) -> unsigned &
 {
-    lhs = lhs | static_cast<T>(rhs);
+    lhs |= static_cast<unsigned>(rhs);
     return lhs;
 }
 
@@ -102,7 +105,7 @@ constexpr T &operator|=(T &lhs, channel rhs)
  * get_channel_dimension(channel::a) -> 3 (ax, ay, az)
  * get_channel_dimension(channel::Lq) -> 4 (Lqw, Lqx, Lqy, Lqz)
  */
-constexpr unsigned get_channel_dimension(channel c)
+constexpr auto get_channel_dimension(channel c) -> unsigned
 {
     switch (c) {
     case channel::Gq:
@@ -147,7 +150,7 @@ constexpr unsigned get_channel_dimension(channel c)
  * get_channel_name(channel::a) -> "a"
  * get_channel_name(channel::Lq) -> "Lq"
  */
-constexpr const char *get_channel_name(channel c)
+constexpr auto get_channel_name(channel c) -> const char *
 {
     switch (c) {
     case channel::Gq:
@@ -219,7 +222,7 @@ constexpr const char *get_channel_name(channel c)
  *
  * get_channel_mask_dimension(channel::Lq | channel::la) -> 7
  */
-constexpr unsigned get_channel_mask_dimension(unsigned mask)
+constexpr auto get_channel_mask_dimension(unsigned mask) -> unsigned
 {
     unsigned result = 0;
 
@@ -233,7 +236,7 @@ constexpr unsigned get_channel_mask_dimension(unsigned mask)
 }
 
 /// Get the bitmask that activates all possible channels.
-constexpr unsigned get_all_channel_mask()
+constexpr auto get_all_channel_mask() -> unsigned
 {
     return 0x0FFFFFFF;
 }
