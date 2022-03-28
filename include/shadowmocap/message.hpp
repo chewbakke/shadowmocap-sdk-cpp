@@ -6,6 +6,7 @@
 #include <regex>
 #include <span>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace shadowmocap {
@@ -35,7 +36,6 @@ auto make_message_view(std::span<char> message)
 {
     using item_type = message_view_item<N>;
 
-    // static_assert(sizeof(typename Message::value_type) == sizeof(char));
     static_assert(
         sizeof(item_type) == 2 * sizeof(unsigned) + N * sizeof(float));
     static_assert(offsetof(item_type, key) == 0);
@@ -60,9 +60,9 @@ auto make_message_view(std::span<char> message)
  *
  * @return @c true if the message is an XML string, otherwise @c false.
  */
-auto is_metadata(std::span<char> message) -> bool
+auto is_metadata(std::string_view message) -> bool
 {
-    const std::string XmlMagic = "<?xml";
+    constexpr std::string_view XmlMagic = "<?xml";
 
     if (std::size(message) < std::size(XmlMagic)) {
         return false;
@@ -87,7 +87,7 @@ auto is_metadata(std::span<char> message) -> bool
  *
  * @return List of node string names in the same order as measurement data.
  */
-auto parse_metadata(std::span<char> message) -> std::vector<std::string>
+auto parse_metadata(std::string_view message) -> std::vector<std::string>
 {
     // Use regular expressions to parse the very simple XML string so we do not
     // depend on a full XML library.
@@ -132,30 +132,23 @@ auto parse_metadata(std::span<char> message) -> std::vector<std::string>
  * // message == "<configurable><Lq/><c/></configurable>"
  * @endcode
  */
-template <typename Message>
-auto make_channel_message(unsigned mask) -> Message
+auto make_channel_message(unsigned mask) -> std::string
 {
-    static_assert(
-        sizeof(typename Message::value_type) == sizeof(char),
-        "message is not bytes");
-
-    const std::string_view Pre =
+    constexpr std::string_view Pre =
         "<?xml version=\"1.0\"?><configurable inactive=\"1\">";
-    const std::string_view Post = "</configurable>";
+    constexpr std::string_view Post = "</configurable>";
 
-    Message result(std::begin(Pre), std::end(Pre));
+    auto message = std::string(Pre);
 
     for (auto c : ChannelList) {
         if (mask & c) {
-            const auto element = std::string("<") + get_channel_name(c) + "/>";
-            result.insert(
-                std::end(result), std::begin(element), std::end(element));
+            message.append("<").append(get_channel_name(c)).append("/>");
         }
     }
 
-    result.insert(std::end(result), std::begin(Post), std::end(Post));
+    message.append(Post);
 
-    return result;
+    return message;
 }
 
 } // namespace shadowmocap
