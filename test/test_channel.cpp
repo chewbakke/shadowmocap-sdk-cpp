@@ -2,7 +2,7 @@
 
 #include <shadowmocap/channel.hpp>
 
-TEST_CASE("channel_bitwise_operators")
+TEST_CASE("channel_bitwise_operators", "[channel]")
 {
     using namespace shadowmocap;
 
@@ -25,7 +25,7 @@ TEST_CASE("channel_bitwise_operators")
     REQUIRE(cmask == 0);
 }
 
-TEST_CASE("channel_dimension")
+TEST_CASE("channel_dimension", "[channel]")
 {
     using namespace shadowmocap;
 
@@ -34,23 +34,26 @@ TEST_CASE("channel_dimension")
 
         REQUIRE((dim == 1 || dim == 3 || dim == 4));
     }
+
+    auto dim = get_channel_dimension(channel::None);
+    REQUIRE(dim == 0);
 }
 
-TEST_CASE("channel_string_names")
+TEST_CASE("channel_string_names", "[channel]")
 {
     using namespace shadowmocap;
 
     static_assert(std::size(ChannelList) == 28);
 
     for (auto c : ChannelList) {
-        const char *name = get_channel_name(c);
+        const char *const name = get_channel_name(c);
 
         REQUIRE(name != nullptr);
         REQUIRE(strlen(name) > 0);
     }
 }
 
-TEST_CASE("channel_mask_dimension")
+TEST_CASE("channel_mask_dimension", "[channel]")
 {
     using namespace shadowmocap;
 
