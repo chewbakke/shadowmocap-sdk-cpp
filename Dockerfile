@@ -18,15 +18,18 @@ RUN apt-get update && apt-get install -y \
 RUN git clone https://github.com/microsoft/vcpkg.git
 
 # Checkout repo
-RUN git clone -b develop \
-    https://github.com/luketokheim/shadowmocap-sdk-cpp.git
+RUN git clone https://github.com/luketokheim/shadowmocap-sdk-cpp.git
 
 # Configure build and download dependencies (from vcpkg manifest)
-RUN cmake -B build -S shadowmocap-sdk-cpp \
+RUN cd shadowmocap-sdk-cpp && \
+    cmake -B build \
+    -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_TOOLCHAIN_FILE=/vcpkg/scripts/buildsystems/vcpkg.cmake
 
-# Build all applications
-RUN cmake --build build
+# Build all apps
+RUN cd shadowmocap-sdk-cpp/build && \
+    cmake --build . --config Release
 
 # Run unit tests
-# RUN cd shadowmocap-sdk-cpp/build && CXX=g++-10 make test
+RUN cd shadowmocap-sdk-cpp/build && \
+    ctest -C Release
