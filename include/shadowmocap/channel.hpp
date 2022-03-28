@@ -2,6 +2,10 @@
 
 #include <shadowmocap/config.hpp>
 
+#include <array>
+#include <initializer_list>
+#include <type_traits>
+
 namespace shadowmocap {
 
 /// Enumerate all possible measurements that are associated with one data node
@@ -152,7 +156,7 @@ constexpr auto get_channel_dimension(channel c) -> unsigned
  * get_channel_name(channel::a) -> "a"
  * get_channel_name(channel::Lq) -> "Lq"
  */
-constexpr auto get_channel_name(channel c) -> const char *
+constexpr auto get_channel_name(channel c) -> const char *const
 {
     switch (c) {
     case channel::Gq:

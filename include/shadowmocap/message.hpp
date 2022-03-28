@@ -14,7 +14,7 @@ namespace shadowmocap {
 /**
  * Utility struct that matches the packed binary layout of one item in a
  * measurement message. Use PODs such that we can overlay this struct onto the
- * binary data without ever copying.
+ * binary data with no copying.
  */
 template <unsigned N>
 struct message_view_item {
@@ -28,7 +28,8 @@ struct message_view_item {
  * message = [item0, ..., itemM)
  * item = [uint = key] [uint = N] [float0, ..., floatN)
  *
- * @param message Container of bytes like std::string or std::vector<char>.
+ * @param message Container of bytes
+ * @return
  */
 template <unsigned N>
 auto make_message_view(std::span<char> message)
@@ -41,6 +42,9 @@ auto make_message_view(std::span<char> message)
     static_assert(offsetof(item_type, key) == 0);
     static_assert(offsetof(item_type, length) == 4);
     static_assert(offsetof(item_type, data) == 8);
+    static_assert(
+        endian::native == endian::little,
+        "message data is little endian, you must implement your own byte swap");
 
     // Sanity checks. Return empty container if we fail.
     if (std::empty(message) || (std::size(message) % sizeof(item_type) != 0)) {
@@ -56,25 +60,11 @@ auto make_message_view(std::span<char> message)
 /// Returns whether a binary message from the Shadow data service is metadata
 /// text in XML format and not measurement data.
 /**
- * @param message Container of bytes.
+ * @param message Container of bytes
  *
  * @return @c true if the message is an XML string, otherwise @c false.
  */
-auto is_metadata(std::string_view message) -> bool
-{
-    constexpr std::string_view XmlMagic = "<?xml";
-
-    if (std::size(message) < std::size(XmlMagic)) {
-        return false;
-    }
-
-    if (!std::equal(
-            std::begin(XmlMagic), std::end(XmlMagic), std::begin(message))) {
-        return false;
-    }
-
-    return true;
-}
+auto is_metadata(std::string_view message) -> bool;
 
 /// Parse a metadata message from the Shadow data service and return a flat list
 /// of node string names.
@@ -87,39 +77,7 @@ auto is_metadata(std::string_view message) -> bool
  *
  * @return List of node string names in the same order as measurement data.
  */
-auto parse_metadata(std::string_view message) -> std::vector<std::string>
-{
-    // Use regular expressions to parse the very simple XML string so we do not
-    // depend on a full XML library.
-    std::regex re("<node\\s+id=\"([^\"]+)\"\\s+key=\"(\\d+)\"");
-
-    auto first =
-        std::regex_iterator(std::begin(message), std::end(message), re);
-    auto last = decltype(first)();
-
-    if (first == last) {
-        return {};
-    }
-
-    // Skip over the first <node id="default"> root level element.
-    ++first;
-
-    auto num_node = std::distance(first, last);
-    if (num_node == 0) {
-        return {};
-    }
-
-    // Create a list of id string in order.
-    // <node id="A"/><node id="B"/> -> ["A", "B"]
-    std::vector<std::string> result(num_node);
-
-    std::transform(first, last, std::begin(result), [](auto &match) {
-        // Return submatch #1 as a string, the id="..." attribute.
-        return match.str(1);
-    });
-
-    return result;
-}
+auto parse_metadata(std::string_view message) -> std::vector<std::string>;
 
 /// Create an XML metadata string that lists the channels we want.
 /**
@@ -132,23 +90,6 @@ auto parse_metadata(std::string_view message) -> std::vector<std::string>
  * // message == "<configurable><Lq/><c/></configurable>"
  * @endcode
  */
-auto make_channel_message(unsigned mask) -> std::string
-{
-    constexpr std::string_view Pre =
-        "<?xml version=\"1.0\"?><configurable inactive=\"1\">";
-    constexpr std::string_view Post = "</configurable>";
-
-    auto message = std::string(Pre);
-
-    for (auto c : ChannelList) {
-        if (mask & c) {
-            message.append("<").append(get_channel_name(c)).append("/>");
-        }
-    }
-
-    message.append(Post);
-
-    return message;
-}
+auto make_channel_message(unsigned mask) -> std::string;
 
 } // namespace shadowmocap
