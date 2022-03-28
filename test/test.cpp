@@ -39,7 +39,7 @@ read_shadowmocap_datastream_frames(shadowmocap::datastream<tcp> &stream)
     {
         // Create an XML string that lists the channels we want in order.
         // <configurable><Lq/><c/></configurable>
-        auto message = make_channel_message<std::string>(Mask);
+        const auto message = make_channel_message(Mask);
 
         co_await write_message(stream, message);
     }
