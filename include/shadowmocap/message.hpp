@@ -42,9 +42,6 @@ auto make_message_view(std::span<char> message)
     static_assert(offsetof(item_type, key) == 0);
     static_assert(offsetof(item_type, length) == 4);
     static_assert(offsetof(item_type, data) == 8);
-    static_assert(
-        endian::native == endian::little,
-        "message data is little endian, you must implement your own byte swap");
 
     // Sanity checks. Return empty container if we fail.
     if (std::empty(message) || (std::size(message) % sizeof(item_type) != 0)) {
