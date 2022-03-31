@@ -1,7 +1,5 @@
 #pragma once
 
-#include <shadowmocap/config.hpp>
-
 #include <array>
 #include <initializer_list>
 #include <type_traits>

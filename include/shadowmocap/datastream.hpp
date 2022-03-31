@@ -1,5 +1,6 @@
 #pragma once
 
+#include <shadowmocap/config.hpp>
 #include <shadowmocap/message.hpp>
 
 #if SHADOWMOCAP_USE_BOOST_ASIO
