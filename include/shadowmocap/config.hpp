@@ -25,3 +25,28 @@ static_assert(ASIO_VERSION >= 102200);
  * Adheres to semantic versioning specification as per https://semver.org/
  */
 #define SHADOWMOCAP_VERSION 400100 // 4.1.0
+
+namespace shadowmocap {
+
+// From Howard Hinnant
+// https://github.com/HowardHinnant/hash_append/blob/master/endian.h
+
+// endian provides answers to the following questions:
+// 1.  Is this system big or little endian?
+// 2.  Is the "desired endian" of some class or function the same as the
+//     native endian?
+enum class endian {
+    native = __BYTE_ORDER__,
+    little = __ORDER_LITTLE_ENDIAN__,
+    big = __ORDER_BIG_ENDIAN__
+};
+
+static_assert(
+    endian::native == endian::little || endian::native == endian::big,
+    "endian::native shall be one of endian::little or endian::big");
+
+static_assert(
+    endian::big != endian::little,
+    "endian::big and endian::little shall have different values");
+
+} // namespace shadowmocap

@@ -1,7 +1,7 @@
 find_package(Catch2 CONFIG REQUIRED)
 find_package(Python)
 
-add_executable(shadowmocap_test test.cpp test_channel.cpp)
+add_executable(shadowmocap_test test.cpp test_channel.cpp test_message.cpp)
 target_link_libraries(shadowmocap_test PRIVATE shadowmocap Catch2::Catch2)
 
 # find_program(LLVM_COV_PATH llvm-cov)

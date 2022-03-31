@@ -18,6 +18,7 @@
 
 #include <chrono>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace shadowmocap {
@@ -33,105 +34,79 @@ using net::ip::tcp;
 template <typename Protocol>
 class datastream {
 public:
-  explicit datastream(typename Protocol::socket socket)
-    : socket_(std::move(socket)), names_(), deadline_()
-  {
-  }
+    explicit datastream(typename Protocol::socket socket)
+        : socket_(std::move(socket)), names_(), deadline_()
+    {
+    }
 
-  typename Protocol::socket socket_;
-  std::vector<std::string> names_;
-  std::chrono::steady_clock::time_point deadline_;
+    typename Protocol::socket socket_;
+    std::vector<std::string> names_;
+    std::chrono::steady_clock::time_point deadline_;
 }; // class datastream
 
 template <typename Message, typename AsyncReadStream>
-net::awaitable<Message> read_message(AsyncReadStream &s)
+auto read_message(AsyncReadStream &s) -> net::awaitable<Message>
 {
-  constexpr auto MaxMessageLength = (1 << 16);
-  static_assert(
-    sizeof(typename Message::value_type) == sizeof(char),
-    "message is not bytes");
+    constexpr auto MaxMessageLength = (1 << 16);
+    static_assert(
+        sizeof(typename Message::value_type) == sizeof(char),
+        "message is not bytes");
 
-  unsigned length = 0;
-  co_await net::async_read(
-    s, net::buffer(&length, sizeof(length)), net::use_awaitable);
+    unsigned length = 0;
+    co_await net::async_read(
+        s, net::buffer(&length, sizeof(length)), net::use_awaitable);
 
-  length = ntohl(length);
-  if (length > MaxMessageLength) {
-    throw std::runtime_error("message length is not valid");
-  }
+    length = ntohl(length);
+    if (length > MaxMessageLength) {
+        throw std::runtime_error("message length is not valid");
+    }
 
-  Message message(length, 0);
+    Message message(length, 0);
 
-  co_await net::async_read(s, net::buffer(message), net::use_awaitable);
+    co_await net::async_read(s, net::buffer(message), net::use_awaitable);
 
-  co_return message;
+    co_return message;
 }
 
 template <typename Message, typename Protocol>
-net::awaitable<Message> read_message(datastream<Protocol> &stream)
+auto read_message(datastream<Protocol> &stream) -> net::awaitable<Message>
 {
-  auto message = co_await read_message<Message>(stream.socket_);
+    auto message = co_await read_message<Message>(stream.socket_);
 
-  if (is_metadata(message)) {
-    stream.names_ = parse_metadata(message);
+    if (is_metadata(message)) {
+        stream.names_ = parse_metadata(message);
 
-    message = co_await read_message<Message>(stream.socket_);
-  }
+        message = co_await read_message<Message>(stream.socket_);
+    }
 
-  co_return message;
+    co_return message;
 }
 
 /**
  * Write a binary message with its length header to the stream.
  */
-template <typename Message, typename AsyncWriteStream>
-net::awaitable<void> write_message(AsyncWriteStream &s, const Message &message)
+template <typename AsyncWriteStream>
+auto write_message(AsyncWriteStream &s, std::string_view message)
+    -> net::awaitable<void>
 {
-  static_assert(
-    sizeof(typename Message::value_type) == sizeof(char),
-    "message is not bytes");
+    unsigned length = htonl(static_cast<unsigned>(std::size(message)));
+    co_await net::async_write(
+        s, net::buffer(&length, sizeof(length)), net::use_awaitable);
 
-  unsigned length = htonl(static_cast<unsigned>(std::size(message)));
-  co_await net::async_write(
-    s, net::buffer(&length, sizeof(length)), net::use_awaitable);
-
-  co_await net::async_write(s, net::buffer(message), net::use_awaitable);
+    co_await net::async_write(s, net::buffer(message), net::use_awaitable);
 }
 
-template <typename Message, typename Protocol>
-net::awaitable<void>
-write_message(datastream<Protocol> &stream, const Message &message)
+template <typename Protocol>
+auto write_message(datastream<Protocol> &stream, std::string_view message)
+    -> net::awaitable<void>
 {
-  co_await write_message(stream.socket_, message);
+    co_await write_message(stream.socket_, message);
 }
 
-net::awaitable<datastream<tcp>> open_connection(const tcp::endpoint &endpoint)
-{
-  tcp::socket socket(co_await net::this_coro::executor);
-  co_await socket.async_connect(endpoint, net::use_awaitable);
+auto open_connection(const tcp::endpoint &endpoint)
+    -> net::awaitable<datastream<tcp>>;
 
-  // Turn off Nagle algorithm. We are streaming many small packets and intend
-  // to reduce latency at the expense of less efficient transfer of data.
-  socket.set_option(tcp::no_delay(true));
-
-  auto message = co_await read_message<std::vector<char>>(socket);
-
-  // Shadow data service responds with its version and name.
-  // <service version="x.y.z" name="configurable"/>
-  if (!is_metadata(message)) {
-    socket.close();
-  }
-
-  co_return socket;
-}
-
-void close_connection(datastream<tcp> &stream)
-{
-  stream.socket_.shutdown(tcp::socket::shutdown_both);
-  stream.socket_.close();
-
-  stream.names_.clear();
-}
+void close_connection(datastream<tcp> &stream);
 
 /**
  * Give the datastream more time to complete its next operation with respect to
@@ -139,11 +114,11 @@ void close_connection(datastream<tcp> &stream)
  */
 template <class Rep, class Period>
 void extend_deadline_for(
-  datastream<tcp> &stream,
-  const std::chrono::duration<Rep, Period> &timeout_duration)
+    datastream<tcp> &stream,
+    const std::chrono::duration<Rep, Period> &timeout_duration)
 {
-  stream.deadline_ = std::max(
-    stream.deadline_, std::chrono::steady_clock::now() + timeout_duration);
+    stream.deadline_ = std::max(
+        stream.deadline_, std::chrono::steady_clock::now() + timeout_duration);
 }
 
 /**
@@ -171,22 +146,12 @@ void extend_deadline_for(
  * }
  * @endcode
  */
-net::awaitable<void>
-watchdog(const std::chrono::steady_clock::time_point &deadline)
-{
-  net::steady_timer timer(co_await net::this_coro::executor);
-
-  auto now = std::chrono::steady_clock::now();
-  while (deadline > now) {
-    timer.expires_at(deadline);
-    co_await timer.async_wait(net::use_awaitable);
-    now = std::chrono::steady_clock::now();
-  }
-}
+auto watchdog(const std::chrono::steady_clock::time_point &deadline)
+    -> net::awaitable<void>;
 
 /**
  * Close a socket that is reading in its own coroutine.
- * 
+ *
  * Intended for use to handle a timeout for a datastream where the
  * async_read_loop function updates the deadline timer.
  *
@@ -196,11 +161,6 @@ watchdog(const std::chrono::steady_clock::time_point &deadline)
  * @endcode
  */
 template <typename Protocol>
-net::awaitable<void> watchdog(datastream<Protocol> &stream)
-{
-  co_await watchdog(stream.deadline_);
-
-  close_connection(stream);
-}
+auto watchdog(datastream<tcp> &stream) -> net::awaitable<void>;
 
 } // namespace shadowmocap
