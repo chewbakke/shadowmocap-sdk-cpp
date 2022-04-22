@@ -24,4 +24,4 @@ static_assert(ASIO_VERSION >= 102200);
 /*
  * Adheres to semantic versioning specification as per https://semver.org/
  */
-#define SHADOWMOCAP_VERSION 400100 // 4.1.0
+#define SHADOWMOCAP_VERSION 000100 // 0.1.0

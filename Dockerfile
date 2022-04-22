@@ -1,7 +1,7 @@
 #
 # docker build -t shadowmocap-builder -f Dockerfile .
 #
-FROM ubuntu:devel
+FROM ubuntu:jammy
 
 # Install build dependencies from package repo
 RUN apt-get update && apt-get install -y \

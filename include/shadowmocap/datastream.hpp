@@ -33,17 +33,11 @@ namespace net = asio;
 using net::ip::tcp;
 
 template <typename Protocol>
-class datastream {
-public:
-    explicit datastream(typename Protocol::socket socket)
-        : socket_(std::move(socket)), names_(), deadline_()
-    {
-    }
-
+struct datastream {
     typename Protocol::socket socket_;
     std::vector<std::string> names_;
     std::chrono::steady_clock::time_point deadline_;
-}; // class datastream
+}; // struct datastream
 
 template <typename Message, typename AsyncReadStream>
 auto read_message(AsyncReadStream &s) -> net::awaitable<Message>
