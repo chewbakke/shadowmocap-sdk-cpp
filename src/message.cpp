@@ -2,14 +2,14 @@
 
 namespace shadowmocap {
 
-auto is_metadata(std::string_view message) -> bool
+bool is_metadata(std::string_view message)
 {
     constexpr std::string_view XmlMagic = "<?xml";
 
     return message.starts_with(XmlMagic);
 }
 
-auto parse_metadata(std::string_view message) -> std::vector<std::string>
+std::vector<std::string> parse_metadata(std::string_view message)
 {
     // Use regular expressions to parse the very simple XML string so we do not
     // depend on a full XML library.
@@ -43,7 +43,7 @@ auto parse_metadata(std::string_view message) -> std::vector<std::string>
     return name_list;
 }
 
-auto make_channel_message(unsigned mask) -> std::string
+std::string make_channel_message(int mask)
 {
     constexpr std::string_view Pre =
         "<?xml version=\"1.0\"?><configurable inactive=\"1\">";

@@ -16,29 +16,27 @@ namespace shadowmocap {
  * measurement message. Use PODs such that we can overlay this struct onto the
  * binary data with no copying.
  */
-template <unsigned N>
+template <std::size_t N>
 struct message_view_item {
-    unsigned key;
-    unsigned length;
+    int key;
+    int length;
     float data[N];
 }; // struct message_view_item
 
 /// Parse a binary message and return an iterable container of items.
 /**
  * message = [item0, ..., itemM)
- * item = [uint = key] [uint = N] [float0, ..., floatN)
+ * item = [int = key] [int = N] [float0, ..., floatN)
  *
  * @param message Container of bytes
  * @return
  */
-template <unsigned N>
-auto make_message_view(std::span<char> message)
-    -> std::span<message_view_item<N>>
+template <std::size_t N>
+std::span<message_view_item<N>> make_message_view(std::span<char> message)
 {
     using item_type = message_view_item<N>;
 
-    static_assert(
-        sizeof(item_type) == 2 * sizeof(unsigned) + N * sizeof(float));
+    static_assert(sizeof(item_type) == 2 * sizeof(int) + N * sizeof(float));
     static_assert(offsetof(item_type, key) == 0);
     static_assert(offsetof(item_type, length) == 4);
     static_assert(offsetof(item_type, data) == 8);
@@ -61,7 +59,7 @@ auto make_message_view(std::span<char> message)
  *
  * @return @c true if the message is an XML string, otherwise @c false.
  */
-auto is_metadata(std::string_view message) -> bool;
+bool is_metadata(std::string_view message);
 
 /// Parse a metadata message from the Shadow data service and return a flat list
 /// of node string names.
@@ -74,7 +72,7 @@ auto is_metadata(std::string_view message) -> bool;
  *
  * @return List of node string names in the same order as measurement data.
  */
-auto parse_metadata(std::string_view message) -> std::vector<std::string>;
+std::vector<std::string> parse_metadata(std::string_view message);
 
 /// Create an XML metadata string that lists the channels we want.
 /**
@@ -87,6 +85,6 @@ auto parse_metadata(std::string_view message) -> std::vector<std::string>;
  * // message == "<configurable><Lq/><c/></configurable>"
  * @endcode
  */
-auto make_channel_message(unsigned mask) -> std::string;
+std::string make_channel_message(int mask);
 
 } // namespace shadowmocap
