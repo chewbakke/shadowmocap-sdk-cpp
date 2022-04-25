@@ -6,6 +6,12 @@
 
 namespace shadowmocap {
 
+/// Integer version in MAJOR.MINOR.PATCH format with digits X.YYY.ZZ
+/*
+ * Adheres to semantic versioning specification as per https://semver.org/
+ */
+constexpr int Version = 400100; // 4.1.0
+
 /// Enumerate all possible measurements that are associated with one data node
 /**
  * Use as a bitmask to define the active channels. Tag data nodes with every

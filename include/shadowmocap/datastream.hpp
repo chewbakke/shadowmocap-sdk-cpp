@@ -3,6 +3,20 @@
 #include <shadowmocap/config.hpp>
 #include <shadowmocap/message.hpp>
 
+/// Set _WIN32_WINNT to the default for current Windows SDK
+#if defined(_WIN32) && !defined(_WIN32_WINNT)
+#include <SDKDDKVer.h>
+#endif
+
+/// Require minimum Asio version that supports awaitable_operators
+#if SHADOWMOCAP_USE_BOOST_ASIO
+#include <boost/asio/version.hpp>
+static_assert(BOOST_ASIO_VERSION >= 102200);
+#else
+#include <asio/version.hpp>
+static_assert(ASIO_VERSION >= 102200);
+#endif
+
 #if SHADOWMOCAP_USE_BOOST_ASIO
 #include <boost/asio/awaitable.hpp>
 #include <boost/asio/detached.hpp>
