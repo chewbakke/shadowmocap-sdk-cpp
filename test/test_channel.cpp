@@ -57,7 +57,7 @@ TEST_CASE("channel_mask_dimension", "[channel]")
 {
     using namespace shadowmocap;
 
-    unsigned mask = 0;
+    int mask = 0;
     for (auto c : ChannelList) {
         mask |= c;
     }

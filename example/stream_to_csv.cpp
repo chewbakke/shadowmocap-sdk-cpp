@@ -20,10 +20,7 @@ namespace net = shadowmocap::net;
 using net::ip::tcp;
 
 // Utility class to store all of the options to run our data stream.
-class command_line_options {
-public:
-    command_line_options();
-
+struct command_line_options {
     /**
       Read the command line tokens and load them into this state. Returns 0 if
       successful, -1 if the command line options are invalid, or 1 if the help
@@ -45,35 +42,33 @@ public:
     std::string message;
 
     /**
-      Stream the formatted data to a file, defaults to empty which writes to
-      std::cout.
+      Stream the formatted data to this file.
     */
-    std::string filename;
+    std::string filename = "out.csv";
 
     /**
       Read N frames and then stop sampling, defaults to 0 which indicates no
       limit and to keep streaming for as long as possible.
     */
-    int frames;
+    int frames = 0;
 
-    /** IP address to connect to, defaults to "127.0.0.1". */
-    std::string host;
+    /** Connect to this IP address. */
+    std::string host = "127.0.0.1";
 
-    /** Service to connect to, defaults to port "32076". */
-    std::string service;
+    /** Service or port to connect to. */
+    std::string service = "32076";
 
-    /** Print this string in between every column, defaults to ",". */
-    std::string separator;
+    /** Print this string in between every column. */
+    std::string separator = ",";
 
-    /** Print this string in between every row, defaults to "\n". */
-    std::string newline;
+    /** Print this string in between every row. */
+    std::string newline = "\n";
 
     /**
-      Set to true to print out string channel names in the 0th row, defaults to
-      false.
+      Set to true to print out string channel names in the 0th row.
     */
-    bool header;
-}; // class command_line_options
+    bool header = true;
+};
 
 net::awaitable<void> read_shadowmocap_datastream_frames(
     const command_line_options &options, shadowmocap::datastream<tcp> &stream,
@@ -168,18 +163,22 @@ net::awaitable<void> read_shadowmocap_datastream(
 {
     using namespace shadowmocap;
     using namespace net::experimental::awaitable_operators;
+    using namespace std::chrono_literals;
 
     auto stream = co_await open_connection(endpoint);
 
     // Request a list of channels for this data stream
-    const std::string xml =
-        make_channel_message<std::string>(channel::Lq | channel::c);
-    co_await write_message(stream, xml);
+    {
+        const auto xml = make_channel_message(channel::Lq | channel::c);
+        co_await write_message(stream, xml);
+    }
 
     net::stream_file file(
         co_await net::this_coro::executor, options.filename,
         net::stream_file::write_only | net::stream_file::create |
             net::stream_file::truncate);
+
+    extend_deadline_for(stream, 1s);
 
     co_await(
         read_shadowmocap_datastream_frames(options, stream, file) ||
@@ -227,17 +226,11 @@ int main(int argc, char **argv)
     return 0;
 }
 
-command_line_options::command_line_options()
-    : message(), filename("out.csv"), frames(), host("127.0.0.1"),
-      service("32076"), separator(","), newline("\n"), header(false)
-{
-}
-
 int command_line_options::parse(int argc, char **argv)
 {
     for (int i = 1; i < argc; ++i) {
         const std::string arg(argv[i]);
-        if ("--file" == arg) {
+        if (arg == "--file") {
             ++i;
             if (i < argc) {
                 filename = argv[i];
@@ -245,7 +238,7 @@ int command_line_options::parse(int argc, char **argv)
                 message = "Missing required argument for --file";
                 return -1;
             }
-        } else if ("--frames" == arg) {
+        } else if (arg == "--frames") {
             ++i;
             if (i < argc) {
                 frames = std::stoi(argv[i]);
@@ -253,9 +246,9 @@ int command_line_options::parse(int argc, char **argv)
                 message = "Missing required argument for --frames";
                 return -1;
             }
-        } else if ("--header" == arg) {
+        } else if (arg == "--header") {
             header = true;
-        } else if ("--help" == arg) {
+        } else if (arg == "--help") {
             return 1;
         } else {
             message = "Unrecognized option \"" + arg + "\"";

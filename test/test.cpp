@@ -20,18 +20,11 @@
 namespace net = shadowmocap::net;
 using net::ip::tcp;
 
-// Handler function for asio::co_spawn to propagate exceptions to the caller
-void rethrow_exception_ptr(std::exception_ptr ptr)
-{
-    if (ptr) {
-        std::rethrow_exception(ptr);
-    }
-}
-
 net::awaitable<void>
 read_shadowmocap_datastream_frames(shadowmocap::datastream<tcp> &stream)
 {
     using namespace shadowmocap;
+    using namespace std::chrono_literals;
 
     constexpr auto Mask = channel::Lq | channel::c;
     constexpr auto ItemSize = get_channel_mask_dimension(Mask);
@@ -48,7 +41,7 @@ read_shadowmocap_datastream_frames(shadowmocap::datastream<tcp> &stream)
 
     std::size_t num_bytes = 0;
     for (int i = 0; i < 100; ++i) {
-        extend_deadline_for(stream, std::chrono::seconds(1));
+        extend_deadline_for(stream, 1s);
 
         auto message = co_await read_message<std::string>(stream);
         num_bytes += std::size(message);
@@ -69,9 +62,9 @@ read_shadowmocap_datastream_frames(shadowmocap::datastream<tcp> &stream)
 
         auto view = shadowmocap::make_message_view<ItemSize>(message);
 
-        REQUIRE(std::size(view) == ItemSize);
+        REQUIRE(std::size(view) == NumItem);
 
-        if (std::size(view) != ItemSize) {
+        if (std::size(view) != NumItem) {
             throw std::runtime_error("message item count mismatch");
         }
 
@@ -100,23 +93,17 @@ read_shadowmocap_datastream_frames(shadowmocap::datastream<tcp> &stream)
 
 net::awaitable<void> read_shadowmocap_datastream(const tcp::endpoint &endpoint)
 {
+    using namespace net::experimental::awaitable_operators;
     using namespace shadowmocap;
+    using namespace std::chrono_literals;
 
     auto stream = co_await open_connection(endpoint);
 
-#if 1
-    using namespace net::experimental::awaitable_operators;
+    extend_deadline_for(stream, 1s);
 
     co_await(
         read_shadowmocap_datastream_frames(stream) ||
         watchdog(stream.deadline_));
-#else
-    co_spawn(
-        co_await net::this_coro::executor,
-        read_shadowmocap_datastream_frames(stream), rethrow_exception_ptr);
-
-    co_await watchdog(stream);
-#endif
 }
 
 bool run()
@@ -124,13 +111,17 @@ bool run()
     try {
         net::io_context ctx;
 
-        const std::string_view host = "127.0.0.1";
-        const std::string_view service = "32076";
+        constexpr std::string_view host = "127.0.0.1";
+        constexpr std::string_view service = "32076";
 
         auto endpoint = *shadowmocap::tcp::resolver(ctx).resolve(host, service);
 
-        co_spawn(
-            ctx, read_shadowmocap_datastream(endpoint), rethrow_exception_ptr);
+        co_spawn(ctx, read_shadowmocap_datastream(endpoint), [](auto ptr) {
+            // Propagate exception from the coroutine
+            if (ptr) {
+                std::rethrow_exception(ptr);
+            }
+        });
 
         ctx.run();
 
