@@ -2,8 +2,6 @@
 
 #include <shadowmocap/channel.hpp>
 
-#include <iterator>
-#include <regex>
 #include <span>
 #include <string>
 #include <string_view>

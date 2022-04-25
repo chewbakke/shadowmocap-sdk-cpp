@@ -1,5 +1,8 @@
 #include <shadowmocap/message.hpp>
 
+#include <algorithm>
+#include <regex>
+
 namespace shadowmocap {
 
 bool is_metadata(std::string_view message)

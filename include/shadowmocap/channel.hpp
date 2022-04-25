@@ -1,7 +1,7 @@
 #pragma once
 
-#include <array>
 #include <initializer_list>
+#include <iterator>
 #include <type_traits>
 
 namespace shadowmocap {
@@ -11,6 +11,9 @@ namespace shadowmocap {
  * Adheres to semantic versioning specification as per https://semver.org/
  */
 constexpr int Version = 400100; // 4.1.0
+
+/// Enables all possible channels
+constexpr int AllChannelMask = 0x0FFFFFFF;
 
 /// Enumerate all possible measurements that are associated with one data node
 /**
@@ -248,7 +251,7 @@ constexpr int get_channel_mask_dimension(int mask)
 /// Get the bitmask that activates all possible channels.
 constexpr int get_all_channel_mask()
 {
-    return 0x0FFFFFFF;
+    return AllChannelMask;
 }
 
 } // namespace shadowmocap

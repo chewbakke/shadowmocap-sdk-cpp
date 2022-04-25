@@ -18,13 +18,11 @@ static_assert(ASIO_VERSION >= 102200);
 
 #if SHADOWMOCAP_USE_BOOST_ASIO
 #include <boost/asio/awaitable.hpp>
-#include <boost/asio/detached.hpp>
 #include <boost/asio/ts/net.hpp>
 #include <boost/asio/ts/socket.hpp>
 #include <boost/asio/use_awaitable.hpp>
 #else
 #include <asio/awaitable.hpp>
-#include <asio/detached.hpp>
 #include <asio/ts/net.hpp>
 #include <asio/ts/socket.hpp>
 #include <asio/use_awaitable.hpp>

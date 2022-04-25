@@ -4,7 +4,7 @@ namespace shadowmocap {
 
 net::awaitable<datastream<tcp>> open_connection(const tcp::endpoint &endpoint)
 {
-    tcp::socket socket(co_await net::this_coro::executor);
+    tcp::socket socket{co_await net::this_coro::executor};
     co_await socket.async_connect(endpoint, net::use_awaitable);
 
     // Turn off Nagle algorithm. We are streaming many small packets and intend
@@ -19,13 +19,13 @@ net::awaitable<datastream<tcp>> open_connection(const tcp::endpoint &endpoint)
         socket.close();
     }
 
-    co_return socket;
+    co_return datastream<tcp>{std::move(socket)};
 }
 
 net::awaitable<void>
 watchdog(const std::chrono::steady_clock::time_point &deadline)
 {
-    net::steady_timer timer(co_await net::this_coro::executor);
+    net::steady_timer timer{co_await net::this_coro::executor};
 
     auto now = std::chrono::steady_clock::now();
     while (deadline > now) {
