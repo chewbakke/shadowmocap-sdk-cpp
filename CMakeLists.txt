@@ -16,8 +16,6 @@ if(asio_FOUND)
 else()
     find_package(Boost)
     target_link_libraries(shadowmocap PUBLIC Boost::boost)
-    #target_include_directories(
-    #    shadowmocap PUBLIC ${Boost_INCLUDE_DIRS})
     target_compile_definitions(
         shadowmocap PUBLIC SHADOWMOCAP_USE_BOOST_ASIO=1)
 endif()

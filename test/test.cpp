@@ -100,23 +100,14 @@ read_shadowmocap_datastream_frames(shadowmocap::datastream<tcp> &stream)
 
 net::awaitable<void> read_shadowmocap_datastream(const tcp::endpoint &endpoint)
 {
+    using namespace net::experimental::awaitable_operators;
     using namespace shadowmocap;
 
     auto stream = co_await open_connection(endpoint);
 
-#if 1
-    using namespace net::experimental::awaitable_operators;
-
     co_await(
         read_shadowmocap_datastream_frames(stream) ||
         watchdog(stream.deadline_));
-#else
-    co_spawn(
-        co_await net::this_coro::executor,
-        read_shadowmocap_datastream_frames(stream), rethrow_exception_ptr);
-
-    co_await watchdog(stream);
-#endif
 }
 
 bool run()

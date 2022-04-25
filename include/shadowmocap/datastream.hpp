@@ -101,8 +101,6 @@ auto write_message(datastream<Protocol> &stream, std::string_view message)
 auto open_connection(const tcp::endpoint &endpoint)
     -> net::awaitable<datastream<tcp>>;
 
-void close_connection(datastream<tcp> &stream);
-
 /**
  * Give the datastream more time to complete its next operation with respect to
  * the watchdog coroutine.

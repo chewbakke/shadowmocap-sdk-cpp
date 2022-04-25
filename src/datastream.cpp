@@ -44,11 +44,4 @@ auto watchdog(const std::chrono::steady_clock::time_point &deadline)
     }
 }
 
-auto watchdog(datastream<tcp> &stream) -> net::awaitable<void>
-{
-    co_await watchdog(stream.deadline_);
-
-    close_connection(stream);
-}
-
 } // namespace shadowmocap
