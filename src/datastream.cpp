@@ -2,8 +2,7 @@
 
 namespace shadowmocap {
 
-auto open_connection(const tcp::endpoint &endpoint)
-    -> net::awaitable<datastream<tcp>>
+net::awaitable<datastream<tcp>> open_connection(const tcp::endpoint &endpoint)
 {
     tcp::socket socket(co_await net::this_coro::executor);
     co_await socket.async_connect(endpoint, net::use_awaitable);
@@ -23,16 +22,8 @@ auto open_connection(const tcp::endpoint &endpoint)
     co_return socket;
 }
 
-void close_connection(datastream<tcp> &stream)
-{
-    stream.socket_.shutdown(tcp::socket::shutdown_both);
-    stream.socket_.close();
-
-    stream.names_.clear();
-}
-
-auto watchdog(const std::chrono::steady_clock::time_point &deadline)
-    -> net::awaitable<void>
+net::awaitable<void>
+watchdog(const std::chrono::steady_clock::time_point &deadline)
 {
     net::steady_timer timer(co_await net::this_coro::executor);
 

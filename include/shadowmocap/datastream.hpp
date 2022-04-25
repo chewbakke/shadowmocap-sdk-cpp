@@ -1,6 +1,5 @@
 #pragma once
 
-#include <shadowmocap/config.hpp>
 #include <shadowmocap/message.hpp>
 
 /// Set _WIN32_WINNT to the default for current Windows SDK
@@ -54,7 +53,7 @@ struct datastream {
 }; // struct datastream
 
 template <typename Message, typename AsyncReadStream>
-auto read_message(AsyncReadStream &s) -> net::awaitable<Message>
+net::awaitable<Message> read_message(AsyncReadStream &s)
 {
     constexpr auto MaxMessageLength = (1 << 16);
     static_assert(
@@ -78,7 +77,7 @@ auto read_message(AsyncReadStream &s) -> net::awaitable<Message>
 }
 
 template <typename Message, typename Protocol>
-auto read_message(datastream<Protocol> &stream) -> net::awaitable<Message>
+net::awaitable<Message> read_message(datastream<Protocol> &stream)
 {
     auto message = co_await read_message<Message>(stream.socket_);
 
@@ -95,8 +94,8 @@ auto read_message(datastream<Protocol> &stream) -> net::awaitable<Message>
  * Write a binary message with its length header to the stream.
  */
 template <typename AsyncWriteStream>
-auto write_message(AsyncWriteStream &s, std::string_view message)
-    -> net::awaitable<void>
+net::awaitable<void>
+write_message(AsyncWriteStream &s, std::string_view message)
 {
     unsigned length = htonl(static_cast<unsigned>(std::size(message)));
     co_await net::async_write(
@@ -106,14 +105,13 @@ auto write_message(AsyncWriteStream &s, std::string_view message)
 }
 
 template <typename Protocol>
-auto write_message(datastream<Protocol> &stream, std::string_view message)
-    -> net::awaitable<void>
+net::awaitable<void>
+write_message(datastream<Protocol> &stream, std::string_view message)
 {
     co_await write_message(stream.socket_, message);
 }
 
-auto open_connection(const tcp::endpoint &endpoint)
-    -> net::awaitable<datastream<tcp>>;
+net::awaitable<datastream<tcp>> open_connection(const tcp::endpoint &endpoint);
 
 /**
  * Give the datastream more time to complete its next operation with respect to
@@ -153,21 +151,7 @@ void extend_deadline_for(
  * }
  * @endcode
  */
-auto watchdog(const std::chrono::steady_clock::time_point &deadline)
-    -> net::awaitable<void>;
-
-/**
- * Close a socket that is reading in its own coroutine.
- *
- * Intended for use to handle a timeout for a datastream where the
- * async_read_loop function updates the deadline timer.
- *
- * @code
- * co_spawn(ctx, async_read_loop(stream), ...);
- * co_await watchdog(stream);
- * @endcode
- */
-template <typename Protocol>
-auto watchdog(datastream<tcp> &stream) -> net::awaitable<void>;
+net::awaitable<void>
+watchdog(const std::chrono::steady_clock::time_point &deadline);
 
 } // namespace shadowmocap
