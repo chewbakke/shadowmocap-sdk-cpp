@@ -2,6 +2,8 @@
 
 #include <shadowmocap/channel.hpp>
 
+#include <cstring>
+
 TEST_CASE("channel_bitwise_operators", "[channel]")
 {
     using namespace shadowmocap;

@@ -9,15 +9,25 @@ add_library(shadowmocap src/datastream.cpp src/message.cpp)
 target_compile_features(shadowmocap PUBLIC cxx_std_20)
 target_include_directories(shadowmocap PUBLIC include/)
 
-# g++10 needs a flag to enable coroutine support
+# g++10 or newer on Linux
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
     target_compile_options(shadowmocap PUBLIC -fcoroutines)
+    find_package(Threads)
+    # find_package(uring)
+    target_compile_options(shadowmocap PUBLIC -fcoroutines)  
+    target_link_libraries(shadowmocap PUBLIC ${CMAKE_THREAD_LIBS_INIT})
 endif()
 
 # Asio 1.22 or Boost 1.78 required
 find_package(asio CONFIG)
 if(asio_FOUND)
-    target_link_libraries(shadowmocap PUBLIC asio asio::asio)
+    if(uring_FOUND)
+        target_compile_definitions(
+            shadowmocap PUBLIC
+            ASIO_HAS_IO_URING
+            ASIO_DISABLE_EPOLL)
+    endif()
+    target_link_libraries(shadowmocap PUBLIC asio::asio)
 else()
     find_package(Boost)
     target_link_libraries(shadowmocap PUBLIC Boost::boost)
