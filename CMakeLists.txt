@@ -11,7 +11,6 @@ target_include_directories(shadowmocap PUBLIC include/)
 
 # g++10 or newer on Linux
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
-    target_compile_options(shadowmocap PUBLIC -fcoroutines)
     find_package(Threads)
     # find_package(uring)
     target_compile_options(shadowmocap PUBLIC -fcoroutines)  
