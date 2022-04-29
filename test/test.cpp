@@ -3,25 +3,23 @@
 
 #include <shadowmocap.hpp>
 
-#if SHADOWMOCAP_USE_BOOST_ASIO
-#include <boost/asio/co_spawn.hpp>
-#include <boost/asio/experimental/awaitable_operators.hpp>
-#include <boost/asio/io_context.hpp>
-#else
+#include <asio/awaitable.hpp>
 #include <asio/co_spawn.hpp>
 #include <asio/experimental/awaitable_operators.hpp>
 #include <asio/io_context.hpp>
-#endif
+#include <asio/ip/tcp.hpp>
 
 #include <chrono>
+#include <exception>
 #include <iostream>
 #include <string>
+#include <string_view>
 
-namespace net = shadowmocap::net;
-using net::ip::tcp;
+using tcp = shadowmocap::tcp;
 
-net::awaitable<void>
-read_shadowmocap_datastream_frames(shadowmocap::datastream<tcp> &stream)
+asio::awaitable<void> read_shadowmocap_datastream_frames(
+    shadowmocap::datastream<tcp> stream,
+    std::shared_ptr<std::chrono::steady_clock::time_point> deadline)
 {
     using namespace shadowmocap;
     using namespace std::chrono_literals;
@@ -41,7 +39,9 @@ read_shadowmocap_datastream_frames(shadowmocap::datastream<tcp> &stream)
 
     std::size_t num_bytes = 0;
     for (int i = 0; i < 100; ++i) {
-        extend_deadline_for(stream, 1s);
+        if (deadline) {
+            extend_deadline_for(*deadline, 1s);
+        }
 
         auto message = co_await read_message<std::string>(stream);
         num_bytes += std::size(message);
@@ -91,37 +91,40 @@ read_shadowmocap_datastream_frames(shadowmocap::datastream<tcp> &stream)
               << std::chrono::duration<double>(end - start).count() << "\n";
 }
 
-net::awaitable<void> read_shadowmocap_datastream(const tcp::endpoint &endpoint)
+asio::awaitable<void> read_shadowmocap_datastream(tcp::endpoint endpoint)
 {
-    using namespace net::experimental::awaitable_operators;
+    using namespace asio::experimental::awaitable_operators;
     using namespace shadowmocap;
     using namespace std::chrono_literals;
 
-    auto stream = co_await open_connection(endpoint);
+    auto stream = co_await open_connection(std::move(endpoint));
 
-    extend_deadline_for(stream, 1s);
+    auto deadline = std::make_shared<std::chrono::steady_clock::time_point>();
+    extend_deadline_for(*deadline, 1s);
 
     co_await(
-        read_shadowmocap_datastream_frames(stream) ||
-        watchdog(stream.deadline_));
+        read_shadowmocap_datastream_frames(std::move(stream), deadline) ||
+        watchdog(deadline));
 }
 
 bool run()
 {
     try {
-        net::io_context ctx;
-
         constexpr std::string_view host = "127.0.0.1";
         constexpr std::string_view service = "32076";
 
-        auto endpoint = *shadowmocap::tcp::resolver(ctx).resolve(host, service);
+        asio::io_context ctx;
 
-        co_spawn(ctx, read_shadowmocap_datastream(endpoint), [](auto ptr) {
-            // Propagate exception from the coroutine
-            if (ptr) {
-                std::rethrow_exception(ptr);
-            }
-        });
+        auto endpoint = *tcp::resolver(ctx).resolve(host, service);
+
+        co_spawn(
+            ctx, read_shadowmocap_datastream(std::move(endpoint)),
+            [](auto ptr) {
+                // Propagate exception from the coroutine
+                if (ptr) {
+                    std::rethrow_exception(ptr);
+                }
+            });
 
         ctx.run();
 

@@ -1,23 +1,19 @@
 #include <shadowmocap.hpp>
 
-#if SHADOWMOCAP_USE_BOOST_ASIO
-#include <boost/asio/co_spawn.hpp>
-#include <boost/asio/experimental/awaitable_operators.hpp>
-#include <boost/asio/io_context.hpp>
-#include <boost/asio/stream_file.hpp>
-#else
+#include <asio/awaitable.hpp>
 #include <asio/co_spawn.hpp>
 #include <asio/experimental/awaitable_operators.hpp>
 #include <asio/io_context.hpp>
+#include <asio/ip/tcp.hpp>
 #include <asio/stream_file.hpp>
-#endif
 
 #include <chrono>
+#include <exception>
 #include <iostream>
 #include <string>
+#include <string_view>
 
-namespace net = shadowmocap::net;
-using net::ip::tcp;
+using shadowmocap::tcp;
 
 // Utility class to store all of the options to run our data stream.
 struct command_line_options {
@@ -70,9 +66,9 @@ struct command_line_options {
     bool header = true;
 };
 
-net::awaitable<void> read_shadowmocap_datastream_frames(
-    const command_line_options &options, shadowmocap::datastream<tcp> &stream,
-    net::stream_file &file)
+asio::awaitable<void> read_shadowmocap_datastream_frames(
+    command_line_options options, shadowmocap::datastream<tcp> stream,
+    std::chrono::steady_clock::time_point &deadline)
 {
     using namespace shadowmocap;
     using namespace std::chrono_literals;
@@ -80,13 +76,18 @@ net::awaitable<void> read_shadowmocap_datastream_frames(
     constexpr auto ItemMask = channel::Lq | channel::c;
     constexpr auto ItemSize = get_channel_mask_dimension(ItemMask);
 
+    asio::stream_file file(
+        co_await asio::this_coro::executor, options.filename,
+        asio::stream_file::write_only | asio::stream_file::create |
+            asio::stream_file::truncate);
+
     std::ostringstream line;
     line.setf(std::ios_base::fixed, std::ios_base::floatfield);
     line.precision(3);
 
     int num_frames = 0;
     for (;;) {
-        extend_deadline_for(stream, 1s);
+        extend_deadline_for(deadline, 1s);
 
         auto message = co_await read_message<std::string>(stream);
 
@@ -149,7 +150,8 @@ net::awaitable<void> read_shadowmocap_datastream_frames(
         auto str = line.str();
         line.str("");
 
-        co_await net::async_write(file, net::buffer(str), net::use_awaitable);
+        co_await asio::async_write(
+            file, asio::buffer(str), asio::use_awaitable);
 
         // Optionally stop after N frames of data.
         if ((options.frames > 0) && (++num_frames >= options.frames)) {
@@ -158,11 +160,11 @@ net::awaitable<void> read_shadowmocap_datastream_frames(
     }
 }
 
-net::awaitable<void> read_shadowmocap_datastream(
-    const command_line_options &options, const tcp::endpoint &endpoint)
+asio::awaitable<void> read_shadowmocap_datastream(
+    command_line_options options, tcp::endpoint endpoint)
 {
     using namespace shadowmocap;
-    using namespace net::experimental::awaitable_operators;
+    using namespace asio::experimental::awaitable_operators;
     using namespace std::chrono_literals;
 
     auto stream = co_await open_connection(endpoint);
@@ -173,29 +175,29 @@ net::awaitable<void> read_shadowmocap_datastream(
         co_await write_message(stream, xml);
     }
 
-    net::stream_file file(
-        co_await net::this_coro::executor, options.filename,
-        net::stream_file::write_only | net::stream_file::create |
-            net::stream_file::truncate);
-
-    extend_deadline_for(stream, 1s);
+    std::chrono::steady_clock::time_point deadline;
+    extend_deadline_for(deadline, 1s);
 
     co_await(
-        read_shadowmocap_datastream_frames(options, stream, file) ||
-        watchdog(stream.deadline_));
+        read_shadowmocap_datastream_frames(
+            std::move(options), std::move(stream), deadline) ||
+        watchdog(deadline));
 }
 
-bool stream_data_to_csv(const command_line_options &options)
+bool stream_data_to_csv(command_line_options options)
 {
     try {
-        net::io_context ctx;
+        asio::io_context ctx;
 
         auto endpoint = *shadowmocap::tcp::resolver(ctx).resolve(
             options.host, options.service);
 
         co_spawn(
-            ctx, read_shadowmocap_datastream(options, endpoint), [](auto ptr) {
-                // Error function for to propagate exceptions to the caller
+            ctx,
+            read_shadowmocap_datastream(
+                std::move(options), std::move(endpoint)),
+            [](auto ptr) {
+                // Propagate exception from the coroutine
                 if (ptr) {
                     std::rethrow_exception(ptr);
                 }
@@ -219,7 +221,7 @@ int main(int argc, char **argv)
     }
 
     // Stream frames to a CSV spreadsheet file.
-    if (!stream_data_to_csv(options)) {
+    if (!stream_data_to_csv(std::move(options))) {
         return -1;
     }
 
