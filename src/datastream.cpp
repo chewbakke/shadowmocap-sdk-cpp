@@ -26,7 +26,7 @@ asio::awaitable<datastream<tcp>> open_connection(tcp::endpoint endpoint)
         socket.close();
     }
 
-    co_return socket;
+    co_return datastream<tcp>{std::move(socket)};
 }
 
 asio::awaitable<void>
