@@ -1,6 +1,7 @@
 #include <shadowmocap/message.hpp>
 
 #include <algorithm>
+#include <iterator>
 #include <regex>
 
 namespace shadowmocap {

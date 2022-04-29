@@ -68,7 +68,7 @@ struct command_line_options {
 
 asio::awaitable<void> read_shadowmocap_datastream_frames(
     command_line_options options, shadowmocap::datastream<tcp> stream,
-    std::chrono::steady_clock::time_point &deadline)
+    std::shared_ptr<std::chrono::steady_clock::time_point> deadline)
 {
     using namespace shadowmocap;
     using namespace std::chrono_literals;
@@ -87,7 +87,9 @@ asio::awaitable<void> read_shadowmocap_datastream_frames(
 
     int num_frames = 0;
     for (;;) {
-        extend_deadline_for(deadline, 1s);
+        if (deadline) {
+            extend_deadline_for(*deadline, 1s);
+        }
 
         auto message = co_await read_message<std::string>(stream);
 
@@ -175,8 +177,8 @@ asio::awaitable<void> read_shadowmocap_datastream(
         co_await write_message(stream, xml);
     }
 
-    std::chrono::steady_clock::time_point deadline;
-    extend_deadline_for(deadline, 1s);
+    auto deadline = std::make_shared<std::chrono::steady_clock::time_point>();
+    extend_deadline_for(*deadline, 1s);
 
     co_await(
         read_shadowmocap_datastream_frames(

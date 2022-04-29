@@ -11,34 +11,11 @@ jobs:
     runs-on: ubuntu-latest
     
     env:
-      SONAR_SCANNER_VERSION: 4.7.0.2747
-      SONAR_SERVER_URL: "https://sonarcloud.io"
-      BUILD_WRAPPER_OUT_DIR: build_wrapper_output_directory # Directory where build-wrapper output will be placed
-    
+      # Customize the CMake build type (Release, Debug, RelWithDebInfo, etc.)
+      BUILD_TYPE: Debug
+
     steps:
     - uses: actions/checkout@v3
-
-    - name: Set up JDK 11
-      uses: actions/setup-java@v1
-      with:
-        java-version: 11
-    
-    - name: Download and set up sonar-scanner
-      env:
-        SONAR_SCANNER_DOWNLOAD_URL: https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli-${{ env.SONAR_SCANNER_VERSION }}-linux.zip
-      run: |
-        mkdir -p $HOME/.sonar
-        curl -sSLo $HOME/.sonar/sonar-scanner.zip ${{ env.SONAR_SCANNER_DOWNLOAD_URL }} 
-        unzip -o $HOME/.sonar/sonar-scanner.zip -d $HOME/.sonar/
-        echo "$HOME/.sonar/sonar-scanner-${{ env.SONAR_SCANNER_VERSION }}-linux/bin" >> $GITHUB_PATH
-    
-    - name: Download and set up build-wrapper
-      env:
-        BUILD_WRAPPER_DOWNLOAD_URL: ${{ env.SONAR_SERVER_URL }}/static/cpp/build-wrapper-linux-x86.zip
-      run: |
-        curl -sSLo $HOME/.sonar/build-wrapper-linux-x86.zip ${{ env.BUILD_WRAPPER_DOWNLOAD_URL }}
-        unzip -o $HOME/.sonar/build-wrapper-linux-x86.zip -d $HOME/.sonar/
-        echo "$HOME/.sonar/build-wrapper-linux-x86" >> $GITHUB_PATH
     
     - uses: actions/cache@v3
       #
@@ -68,10 +45,35 @@ jobs:
         https://github.com/Microsoft/vcpkg.git
         ${{ github.workspace }}/build/vcpkg/
 
-    - name: Run build-wrapper
-      run: |
-        CXX=g++-10 cmake -B ${{ github.workspace }}/build -DCMAKE_BUILD_TYPE=Release -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/build/vcpkg/scripts/buildsystems/vcpkg.cmake
-        build-wrapper-linux-x86-64 --out-dir ${{ env.BUILD_WRAPPER_OUT_DIR }} cmake --build ${{ github.workspace }}/build --config Release
+    - name: Install sonar-scanner
+      #
+      # https://github.com/Warchant/setup-sonar-scanner
+      #
+      uses: warchant/setup-sonar-scanner@v3
+      #with:
+      #  version: 4.6.2.2472
+
+    - name: Configure
+      #
+      # Configure CMake in the "build" subdirectory. This will also install
+      # vcpkg dependencies from our project manifest file automagically.
+      #
+      run: >
+        cmake 
+        -B ${{ github.workspace }}/build
+        -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+        -DCMAKE_CXX_COMPILER=$(which g++-10)
+        -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+        -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/build/vcpkg/scripts/buildsystems/vcpkg.cmake
+
+    - name: Build
+      #
+      # Build all enabled programs with the given configuration.
+      #
+      run: >
+        cmake
+        --build ${{ github.workspace }}/build
+        --config ${{ env.BUILD_TYPE }}
       
     - name: Test
       #
@@ -83,7 +85,7 @@ jobs:
       #   add_test(UnitTestName unit_test)
       #
       working-directory: ${{ github.workspace }}/build
-      run: ctest -C Release
+      run: ctest -C ${{ env.BUILD_TYPE }}
 
     - name: Run sonar-scanner
       env:
@@ -91,5 +93,4 @@ jobs:
         SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       run: >
         sonar-scanner
-        --define sonar.host.url="${{ env.SONAR_SERVER_URL }}"
-        --define sonar.cfamily.build-wrapper-output="${{ env.BUILD_WRAPPER_OUT_DIR }}"
+        --define sonar.cfamily.compile-commands=${{ github.workspace }}/build/compile_commands.json
