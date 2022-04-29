@@ -12,27 +12,13 @@ target_include_directories(shadowmocap PUBLIC include/)
 # g++10 or newer on Linux
 if(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
     find_package(Threads)
-    # find_package(uring)
     target_compile_options(shadowmocap PUBLIC -fcoroutines)  
     target_link_libraries(shadowmocap PUBLIC ${CMAKE_THREAD_LIBS_INIT})
 endif()
 
-# Asio 1.22 or Boost 1.78 required
-find_package(asio CONFIG)
-if(asio_FOUND)
-    if(uring_FOUND)
-        target_compile_definitions(
-            shadowmocap PUBLIC
-            ASIO_HAS_IO_URING
-            ASIO_DISABLE_EPOLL)
-    endif()
-    target_link_libraries(shadowmocap PUBLIC asio::asio)
-else()
-    find_package(Boost)
-    target_link_libraries(shadowmocap PUBLIC Boost::boost)
-    target_compile_definitions(
-        shadowmocap PUBLIC SHADOWMOCAP_USE_BOOST_ASIO=1)
-endif()
+# Asio 1.22 or newer required
+find_package(asio CONFIG REQUIRED)
+target_link_libraries(shadowmocap PUBLIC asio::asio)
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     include(CTest)
@@ -41,4 +27,7 @@ endif()
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
     add_subdirectory(test)
     add_subdirectory(bench)
+    if(WIN32)
+    #    add_subdirectory(example)
+    endif()
 endif()
