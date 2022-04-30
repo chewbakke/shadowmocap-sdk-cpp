@@ -16,6 +16,7 @@
 #include <asio/write.hpp>
 
 #include <chrono>
+#include <exception>
 #include <memory>
 #include <string>
 #include <string_view>
@@ -31,8 +32,8 @@ struct datastream {
     std::vector<std::string> names_;
 }; // struct datastream
 
-template <typename Message, typename AsyncReadStream>
-asio::awaitable<Message> read_message(AsyncReadStream &s)
+template <typename Message>
+asio::awaitable<Message> read_message(tcp::socket &socket)
 {
     constexpr auto MaxMessageLength = (1 << 16);
     static_assert(
@@ -41,7 +42,7 @@ asio::awaitable<Message> read_message(AsyncReadStream &s)
 
     unsigned length = 0;
     co_await asio::async_read(
-        s, asio::buffer(&length, sizeof(length)), asio::use_awaitable);
+        socket, asio::buffer(&length, sizeof(length)), asio::use_awaitable);
 
     length = ntohl(length);
     if (length > MaxMessageLength) {
@@ -50,13 +51,14 @@ asio::awaitable<Message> read_message(AsyncReadStream &s)
 
     Message message(length, 0);
 
-    co_await asio::async_read(s, asio::buffer(message), asio::use_awaitable);
+    co_await asio::async_read(
+        socket, asio::buffer(message), asio::use_awaitable);
 
     co_return message;
 }
 
-template <typename Message, typename Protocol>
-asio::awaitable<Message> read_message(datastream<Protocol> &stream)
+template <typename Message>
+asio::awaitable<Message> read_message(datastream<tcp> &stream)
 {
     auto message = co_await read_message<Message>(stream.socket_);
 
@@ -72,23 +74,11 @@ asio::awaitable<Message> read_message(datastream<Protocol> &stream)
 /**
  * Write a binary message with its length header to the stream.
  */
-template <typename AsyncWriteStream>
 asio::awaitable<void>
-write_message(AsyncWriteStream &s, std::string_view message)
-{
-    unsigned length = htonl(static_cast<unsigned>(std::size(message)));
-    co_await asio::async_write(
-        s, asio::buffer(&length, sizeof(length)), asio::use_awaitable);
+write_message(tcp::socket &socket, std::string_view message);
 
-    co_await asio::async_write(s, asio::buffer(message), asio::use_awaitable);
-}
-
-template <typename Protocol>
 asio::awaitable<void>
-write_message(datastream<Protocol> &stream, std::string_view message)
-{
-    co_await write_message(stream.socket_, message);
-}
+write_message(datastream<tcp> &stream, std::string_view message);
 
 asio::awaitable<datastream<tcp>> open_connection(tcp::endpoint endpoint);
 

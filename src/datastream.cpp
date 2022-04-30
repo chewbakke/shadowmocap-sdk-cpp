@@ -9,6 +9,23 @@
 
 namespace shadowmocap {
 
+asio::awaitable<void>
+write_message(tcp::socket &socket, std::string_view message)
+{
+    unsigned length = htonl(static_cast<unsigned>(std::size(message)));
+    co_await asio::async_write(
+        socket, asio::buffer(&length, sizeof(length)), asio::use_awaitable);
+
+    co_await asio::async_write(
+        socket, asio::buffer(message), asio::use_awaitable);
+}
+
+asio::awaitable<void>
+write_message(datastream<tcp> &stream, std::string_view message)
+{
+    co_await write_message(stream.socket_, message);
+}
+
 asio::awaitable<datastream<tcp>> open_connection(tcp::endpoint endpoint)
 {
     tcp::socket socket{co_await asio::this_coro::executor};
