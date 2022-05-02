@@ -10,7 +10,7 @@ target_compile_features(shadowmocap PUBLIC cxx_std_20)
 target_include_directories(shadowmocap PUBLIC include/)
 
 # g++10 or newer on Linux
-if(CMAKE_CXX_COMPILER_ID MATCHES "GNU")
+if(CMAKE_COMPILER_IS_GNUCXX)
     find_package(Threads)
     target_compile_options(shadowmocap PUBLIC -fcoroutines)  
     target_link_libraries(shadowmocap PUBLIC ${CMAKE_THREAD_LIBS_INIT})
@@ -21,6 +21,19 @@ find_package(asio CONFIG REQUIRED)
 target_link_libraries(shadowmocap PUBLIC asio::asio)
 
 target_compile_definitions(shadowmocap PUBLIC ASIO_DISABLE_NOEXCEPT)
+
+option(ENABLE_TEST_COVERAGE "Enable unit test code coverage with g++ and gcov" OFF)
+
+if (ENABLE_TEST_COVERAGE)
+    target_compile_options(shadowmocap PUBLIC --coverage)
+    target_link_options(shadowmocap PUBLIC --coverage)
+
+    find_program(GCOVR_PATH gcovr REQUIRED)
+    add_custom_target(
+        coverage
+        COMMAND
+        ${GCOVR_PATH} --sonarqube coverage.xml --root ${PROJECT_SOURCE_DIR})
+endif()
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     include(CTest)

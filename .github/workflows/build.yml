@@ -53,6 +53,9 @@ jobs:
       #with:
       #  version: 4.6.2.2472
 
+#    - name: Install package dependencies
+#      run: apt-get install -y gcovr
+
     - name: Configure
       #
       # Configure CMake in the "build" subdirectory. This will also install
@@ -61,6 +64,7 @@ jobs:
       run: >
         cmake 
         -B ${{ github.workspace }}/build
+        -DENABLE_TEST_COVERAGE=ON
         -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
         -DCMAKE_CXX_COMPILER=$(which g++-10)
         -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
@@ -86,6 +90,11 @@ jobs:
       #
       working-directory: ${{ github.workspace }}/build
       run: ctest -C ${{ env.BUILD_TYPE }}
+
+    - name: Create coverage report
+      # Compile all coverage files into one XML doc for sonarcloud
+      working-directory: ${{ github.workspace }}/build
+      run: make coverage
 
     - name: Run sonar-scanner
       env:
