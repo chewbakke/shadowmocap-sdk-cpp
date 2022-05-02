@@ -50,8 +50,8 @@ jobs:
       # https://github.com/Warchant/setup-sonar-scanner
       #
       uses: warchant/setup-sonar-scanner@v3
-      #with:
-      #  version: 4.6.2.2472
+      with:
+        version: 4.7.0.2747
 
     - name: Install package dependencies
       run: sudo apt-get install -y gcovr
@@ -92,7 +92,9 @@ jobs:
       run: ctest -C ${{ env.BUILD_TYPE }}
 
     - name: Create coverage report
-      # Compile all coverage files into one XML doc for sonarcloud
+      #
+      # Compile all coverage files into one report for sonarcloud
+      #
       working-directory: ${{ github.workspace }}/build
       run: make coverage
 
