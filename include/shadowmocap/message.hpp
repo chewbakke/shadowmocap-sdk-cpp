@@ -10,8 +10,8 @@
 namespace shadowmocap {
 
 /**
- * Utility struct that matches the packed binary layout of one item in a
- * measurement message. Use PODs such that we can overlay this struct onto the
+ * Utility class that matches the packed binary layout of one item in a
+ * measurement message. Use PODs such that we can overlay this object onto the
  * binary data with no copying.
  */
 template <std::size_t N>

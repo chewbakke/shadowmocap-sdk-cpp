@@ -7,75 +7,59 @@
 #include <SDKDDKVer.h>
 #endif
 
-/// Require minimum Asio version that supports awaitable_operators
-#if SHADOWMOCAP_USE_BOOST_ASIO
-#include <boost/asio/version.hpp>
-static_assert(BOOST_ASIO_VERSION >= 102200);
-#else
-#include <asio/version.hpp>
-static_assert(ASIO_VERSION >= 102200);
-#endif
-
-#if SHADOWMOCAP_USE_BOOST_ASIO
-#include <boost/asio/awaitable.hpp>
-#include <boost/asio/ts/net.hpp>
-#include <boost/asio/ts/socket.hpp>
-#include <boost/asio/use_awaitable.hpp>
-#else
 #include <asio/awaitable.hpp>
+#include <asio/buffer.hpp>
+#include <asio/ip/tcp.hpp>
+#include <asio/read.hpp>
 #include <asio/ts/net.hpp>
-#include <asio/ts/socket.hpp>
 #include <asio/use_awaitable.hpp>
-#endif
+#include <asio/write.hpp>
 
 #include <chrono>
+#include <exception>
+#include <memory>
 #include <string>
 #include <string_view>
 #include <vector>
 
 namespace shadowmocap {
 
-#if SHADOWMOCAP_USE_BOOST_ASIO
-namespace net = boost::asio;
-#else
-namespace net = asio;
-#endif
-
-using net::ip::tcp;
+using tcp = asio::ip::tcp;
 
 template <typename Protocol>
 struct datastream {
     typename Protocol::socket socket_;
     std::vector<std::string> names_;
-    std::chrono::steady_clock::time_point deadline_;
 }; // struct datastream
 
-template <typename Message, typename AsyncReadStream>
-net::awaitable<Message> read_message(AsyncReadStream &s)
+template <typename Message>
+asio::awaitable<Message> read_message(tcp::socket &socket)
 {
-    constexpr auto MaxMessageLength = (1 << 16);
+    constexpr auto MinMessageLength = 1;
+    constexpr auto MaxMessageLength = 1 << 16;
     static_assert(
         sizeof(typename Message::value_type) == sizeof(char),
         "message is not bytes");
 
     unsigned length = 0;
-    co_await net::async_read(
-        s, net::buffer(&length, sizeof(length)), net::use_awaitable);
+    co_await asio::async_read(
+        socket, asio::buffer(&length, sizeof(length)), asio::use_awaitable);
 
     length = ntohl(length);
-    if (length > MaxMessageLength) {
+    if ((length < MinMessageLength) || (length > MaxMessageLength)) {
         throw std::runtime_error("message length is not valid");
     }
 
     Message message(length, 0);
 
-    co_await net::async_read(s, net::buffer(message), net::use_awaitable);
+    co_await asio::async_read(
+        socket, asio::buffer(message), asio::use_awaitable);
 
     co_return message;
 }
 
-template <typename Message, typename Protocol>
-net::awaitable<Message> read_message(datastream<Protocol> &stream)
+template <typename Message>
+asio::awaitable<Message> read_message(datastream<tcp> &stream)
 {
     auto message = co_await read_message<Message>(stream.socket_);
 
@@ -91,38 +75,13 @@ net::awaitable<Message> read_message(datastream<Protocol> &stream)
 /**
  * Write a binary message with its length header to the stream.
  */
-template <typename AsyncWriteStream>
-net::awaitable<void>
-write_message(AsyncWriteStream &s, std::string_view message)
-{
-    unsigned length = htonl(static_cast<unsigned>(std::size(message)));
-    co_await net::async_write(
-        s, net::buffer(&length, sizeof(length)), net::use_awaitable);
+asio::awaitable<void>
+write_message(tcp::socket &socket, std::string_view message);
 
-    co_await net::async_write(s, net::buffer(message), net::use_awaitable);
-}
+asio::awaitable<void>
+write_message(datastream<tcp> &stream, std::string_view message);
 
-template <typename Protocol>
-net::awaitable<void>
-write_message(datastream<Protocol> &stream, std::string_view message)
-{
-    co_await write_message(stream.socket_, message);
-}
-
-net::awaitable<datastream<tcp>> open_connection(const tcp::endpoint &endpoint);
-
-/**
- * Give the datastream more time to complete its next operation with respect to
- * the watchdog coroutine.
- */
-template <class Rep, class Period>
-void extend_deadline_for(
-    datastream<tcp> &stream,
-    const std::chrono::duration<Rep, Period> &timeout_duration)
-{
-    stream.deadline_ = std::max(
-        stream.deadline_, std::chrono::steady_clock::now() + timeout_duration);
-}
+asio::awaitable<datastream<tcp>> open_connection(tcp::endpoint endpoint);
 
 /**
  * From Chris Kohlhoff talk "Talking Async Ep1: Why C++20 is the Awesomest
@@ -137,19 +96,32 @@ void extend_deadline_for(
  * This function is intended for use with awaitable operators in Asio.
  *
  * @code
- * co_await(async_read_loop(stream) || watchdog(stream.deadline_));
+ * co_await(async_read_loop(stream, deadline) || watchdog(deadline));
  * @endcode
  *
  * Where the async_read_loop function updates the deadline timer.
  *
  * @code
  * for (;;) {
- *   stream.deadline_ = now() + 1s;
- *   co_await net::async_read(stream.socket_, ...);
+ *   *deadline = now() + 1s;
+ *   co_await asio::async_read(stream.socket_, ...);
  * }
  * @endcode
  */
-net::awaitable<void>
-watchdog(const std::chrono::steady_clock::time_point &deadline);
+asio::awaitable<void>
+watchdog(std::shared_ptr<std::chrono::steady_clock::time_point> deadline);
+
+/**
+ * Extend the deadline time by at least the duration. Intended for use with
+ * the watchdog and async loop pair.
+ */
+template <class Rep, class Period>
+void extend_deadline_for(
+    std::chrono::steady_clock::time_point &deadline,
+    const std::chrono::duration<Rep, Period> &timeout_duration)
+{
+    deadline =
+        std::max(deadline, std::chrono::steady_clock::now() + timeout_duration);
+}
 
 } // namespace shadowmocap
