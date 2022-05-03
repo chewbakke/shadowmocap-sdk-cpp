@@ -12,12 +12,12 @@ namespace shadowmocap {
 asio::awaitable<void>
 write_message(tcp::socket &socket, std::string_view message)
 {
-    unsigned length = htonl(static_cast<unsigned>(std::size(message)));
-    co_await asio::async_write(
-        socket, asio::buffer(&length, sizeof(length)), asio::use_awaitable);
+    const unsigned length = htonl(static_cast<unsigned>(std::size(message)));
 
-    co_await asio::async_write(
-        socket, asio::buffer(message), asio::use_awaitable);
+    const auto buffers = {
+        asio::buffer(&length, sizeof(length)), asio::buffer(message)};
+
+    co_await asio::async_write(socket, buffers, asio::use_awaitable);
 }
 
 asio::awaitable<void>
