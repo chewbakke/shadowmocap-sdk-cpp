@@ -35,6 +35,15 @@ if (ENABLE_TEST_COVERAGE)
         ${GCOVR_PATH} --sonarqube coverage.xml --root ${PROJECT_SOURCE_DIR})
 endif()
 
+if (ENABLE_LLVM_COVERAGE)
+    target_compile_options(
+        shadowmocap PUBLIC -fprofile-instr-generate -fcoverage-mapping)
+    target_link_options(
+        shadowmocap PUBLIC -fprofile-instr-generate -fcoverage-mapping)
+
+    find_program(LLVM_COV llvm-cov REQUIRED)
+endif()
+
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     include(CTest)
 endif()
