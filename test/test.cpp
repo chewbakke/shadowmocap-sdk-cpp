@@ -100,7 +100,7 @@ asio::awaitable<void> read_shadowmocap_datastream(tcp::endpoint endpoint)
     auto stream = co_await open_connection(std::move(endpoint));
 
     auto deadline = std::make_shared<std::chrono::steady_clock::time_point>();
-    extend_deadline_for(*deadline, 1s);
+    extend_deadline_for(*deadline, 5s);
 
     co_await(
         read_shadowmocap_datastream_frames(std::move(stream), deadline) ||

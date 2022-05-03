@@ -20,7 +20,7 @@ endif()
 find_package(asio CONFIG REQUIRED)
 target_link_libraries(shadowmocap PUBLIC asio::asio)
 
-target_compile_definitions(shadowmocap PUBLIC ASIO_DISABLE_NOEXCEPT)
+# target_compile_definitions(shadowmocap PUBLIC ASIO_DISABLE_NOEXCEPT)
 
 option(ENABLE_TEST_COVERAGE "Enable unit test code coverage with g++ and gcov" OFF)
 
