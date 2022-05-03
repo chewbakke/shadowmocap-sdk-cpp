@@ -15,7 +15,7 @@ bool is_metadata(std::string_view message)
 
 std::vector<std::string> parse_metadata(std::string_view message)
 {
-    // Use regular expressions to parse the very simple XML string so we do not
+    // Use regular expression to parse the very simple XML string so we do not
     // depend on a full XML library.
     std::regex re("<node\\s+id=\"([^\"]+)\"\\s+key=\"(\\d+)\"");
 
@@ -31,7 +31,7 @@ std::vector<std::string> parse_metadata(std::string_view message)
     ++first;
 
     auto num_node = std::distance(first, last);
-    if (num_node == 0) {
+    if (num_node <= 0) {
         return {};
     }
 
