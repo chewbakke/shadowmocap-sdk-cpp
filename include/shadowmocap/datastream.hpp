@@ -35,7 +35,8 @@ struct datastream {
 template <typename Message>
 asio::awaitable<Message> read_message(tcp::socket &socket)
 {
-    constexpr auto MaxMessageLength = (1 << 16);
+    constexpr auto MinMessageLength = 1;
+    constexpr auto MaxMessageLength = 1 << 16;
     static_assert(
         sizeof(typename Message::value_type) == sizeof(char),
         "message is not bytes");
@@ -45,7 +46,7 @@ asio::awaitable<Message> read_message(tcp::socket &socket)
         socket, asio::buffer(&length, sizeof(length)), asio::use_awaitable);
 
     length = ntohl(length);
-    if (length > MaxMessageLength) {
+    if ((length < MinMessageLength) || (length > MaxMessageLength)) {
         throw std::runtime_error("message length is not valid");
     }
 
