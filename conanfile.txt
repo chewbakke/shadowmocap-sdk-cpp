@@ -4,5 +4,5 @@ benchmark/1.6.1
 catch2/2.13.9
 
 [generators]
-cmake_find_package
-cmake_paths
+CMakeDeps
+CMakeToolchain
