@@ -3,9 +3,7 @@ ShadowMocap SDK C++
 
 # Build with CMake
 
-This project is a header only library so you do not need to compile anything to
-use it in your projects. Build the test, benchmark, and example apps with
-CMake.
+Build the test, benchmark, and example apps with CMake.
 
 ## Install package manager
 ```console

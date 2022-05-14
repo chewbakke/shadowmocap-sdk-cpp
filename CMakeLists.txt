@@ -20,9 +20,10 @@ endif()
 find_package(asio CONFIG REQUIRED)
 target_link_libraries(shadowmocap PUBLIC asio::asio)
 
-# target_compile_definitions(shadowmocap PUBLIC ASIO_DISABLE_NOEXCEPT)
-
-option(ENABLE_TEST_COVERAGE "Enable unit test code coverage with g++ and gcov" OFF)
+option(
+    ENABLE_TEST_COVERAGE
+    "Enable unit test code coverage with g++ and gcov"
+    OFF)
 
 if (ENABLE_TEST_COVERAGE)
     target_compile_options(shadowmocap PUBLIC --coverage)
@@ -35,14 +36,10 @@ if (ENABLE_TEST_COVERAGE)
         ${GCOVR_PATH} --sonarqube coverage.xml --root ${PROJECT_SOURCE_DIR})
 endif()
 
-if (ENABLE_LLVM_COVERAGE)
-    target_compile_options(
-        shadowmocap PUBLIC -fprofile-instr-generate -fcoverage-mapping)
-    target_link_options(
-        shadowmocap PUBLIC -fprofile-instr-generate -fcoverage-mapping)
-
-    find_program(LLVM_COV llvm-cov REQUIRED)
-endif()
+option(
+    ENABLE_TEST_BENCHMARK
+    "Enable benchmarks as part of testing"
+    OFF)
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
     include(CTest)
@@ -50,8 +47,11 @@ endif()
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
     add_subdirectory(test)
-    add_subdirectory(bench)
-    if(WIN32)
-        add_subdirectory(example)
+    if(ENABLE_TEST_BENCHMARK)
+        add_subdirectory(bench)
     endif()
+endif()
+
+if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND WIN32)
+    add_subdirectory(example)
 endif()
