@@ -26,6 +26,9 @@ namespace shadowmocap {
 
 using tcp = asio::ip::tcp;
 
+constexpr auto MinMessageLength = 1;
+constexpr auto MaxMessageLength = 1 << 16;
+
 template <typename Protocol>
 struct datastream {
     typename Protocol::socket socket_;
@@ -35,8 +38,6 @@ struct datastream {
 template <typename Message>
 asio::awaitable<Message> read_message(tcp::socket &socket)
 {
-    constexpr auto MinMessageLength = 1;
-    constexpr auto MaxMessageLength = 1 << 16;
     static_assert(
         sizeof(typename Message::value_type) == sizeof(char),
         "message is not bytes");
@@ -47,7 +48,7 @@ asio::awaitable<Message> read_message(tcp::socket &socket)
 
     length = ntohl(length);
     if ((length < MinMessageLength) || (length > MaxMessageLength)) {
-        throw std::runtime_error("message length is not valid");
+        throw std::length_error("message length is not valid");
     }
 
     Message message(length, 0);
