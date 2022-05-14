@@ -46,33 +46,33 @@ asio::awaitable<void> read_shadowmocap_datastream_frames(
         auto message = co_await read_message<std::string>(stream);
         num_bytes += std::size(message);
 
-        const auto NumItem = std::size(stream.names_);
+        const auto num_item = std::size(stream.names_);
 
-        REQUIRE(NumItem > 0);
+        REQUIRE(num_item > 0);
 
-        if (NumItem == 0) {
-            throw std::runtime_error("name map must not be empty");
+        if (num_item == 0) {
+            throw std::length_error("name map must not be empty");
         }
 
-        REQUIRE(std::size(message) == NumItem * (2 + ItemSize) * 4);
+        REQUIRE(std::size(message) == num_item * (2 + ItemSize) * 4);
 
-        if (std::size(message) != NumItem * (2 + ItemSize) * 4) {
+        if (std::size(message) != num_item * (2 + ItemSize) * 4) {
             throw std::runtime_error("message size mismatch");
         }
 
         auto view = shadowmocap::make_message_view<ItemSize>(message);
 
-        REQUIRE(std::size(view) == NumItem);
+        REQUIRE(std::size(view) == num_item);
 
-        if (std::size(view) != NumItem) {
-            throw std::runtime_error("message item count mismatch");
+        if (num_item != std::size(view)) {
+            throw std::length_error("message item count mismatch");
         }
 
         for (auto &item : view) {
             REQUIRE(item.length == ItemSize);
 
             if (item.length != ItemSize) {
-                throw std::runtime_error("message item channel size mismatch");
+                throw std::length_error("message item channel size mismatch");
             }
 
             std::cout << item.key << " " << item.length << " = ";

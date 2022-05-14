@@ -12,6 +12,11 @@ namespace shadowmocap {
 asio::awaitable<void>
 write_message(tcp::socket &socket, std::string_view message)
 {
+    if ((std::size(message) < MinMessageLength) ||
+        (std::size(message) > MaxMessageLength)) {
+        throw std::length_error("message length is not valid");
+    }
+
     const unsigned length = htonl(static_cast<unsigned>(std::size(message)));
 
     const auto buffers = {
