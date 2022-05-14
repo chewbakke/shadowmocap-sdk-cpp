@@ -152,7 +152,7 @@ constexpr int get_channel_dimension(channel c)
         return 1;
     default:
         return 0;
-    };
+    }
 }
 
 /// Get the string name of a channel from its enumeration
