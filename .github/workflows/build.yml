@@ -22,8 +22,7 @@ jobs:
       # https://docs.github.com/en/actions/using-jobs/using-a-build-matrix-for-your-jobs
       #
       matrix:
-        include:
-        - os: [windows-latest, macos-latest]
+        os: [windows-latest, macos-latest]
 
     env:
       #
