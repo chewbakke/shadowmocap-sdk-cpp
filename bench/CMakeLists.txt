@@ -11,3 +11,5 @@ target_link_libraries(
     PRIVATE
     shadowmocap
     benchmark::benchmark)
+
+add_test(Benchmarks shadowmocap_bench)
