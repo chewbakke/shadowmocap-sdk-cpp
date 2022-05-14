@@ -81,10 +81,8 @@ jobs:
       #
       # Build all enabled programs with the given configuration.
       #
-      run: >
-        cmake
-        --build ${{ github.workspace }}/build
-        --config ${{ env.BUILD_TYPE }}
+      working-directory: build
+      run: cmake --build . --config ${{ env.BUILD_TYPE }}
 
     - name: Test
       #
@@ -95,5 +93,5 @@ jobs:
       #   add_executable(unit_test unit_test.cpp)
       #   add_test(UnitTestName unit_test)
       #
-      working-directory: ${{ github.workspace }}/build
+      working-directory: build
       run: ctest -C ${{ env.BUILD_TYPE }}
