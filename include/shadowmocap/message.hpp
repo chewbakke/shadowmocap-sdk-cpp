@@ -12,7 +12,7 @@ namespace shadowmocap {
 /**
  * Utility class that matches the packed binary layout of one item in a
  * measurement message. Use PODs such that we can overlay this object onto the
- * binary data with no copying.
+ * binary data with no copying. Use only 4 byte types to maintain alignment.
  */
 template <std::size_t N>
 struct message_view_item {
@@ -23,11 +23,15 @@ struct message_view_item {
 
 /// Parse a binary message and return an iterable container of items.
 /**
+ * Zero copy and zero allocation. The resulting span references the memory
+ * passed in using the message parameter. The resulting span is invalidated if
+ * the message buffer is modified or deallocated.
+ *  
  * message = [item0, ..., itemM)
  * item = [int = key] [int = N] [float0, ..., floatN)
  *
  * @param message Container of bytes
- * @return
+ * @return A iterable span of fixed size items. Returns an empty list on error.
  */
 template <std::size_t N>
 std::span<message_view_item<N>> make_message_view(std::span<char> message)
@@ -44,7 +48,8 @@ std::span<message_view_item<N>> make_message_view(std::span<char> message)
         return {};
     }
 
-    auto *first = reinterpret_cast<item_type *>(std::data(message));
+    auto *first = 
+        static_cast<item_type *>(static_cast<void *>(std::data(message)));
     auto count = std::size(message) / sizeof(item_type);
 
     return {first, count};

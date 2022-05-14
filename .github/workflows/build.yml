@@ -22,7 +22,7 @@ jobs:
       # https://docs.github.com/en/actions/using-jobs/using-a-build-matrix-for-your-jobs
       #
       matrix:
-        os: [windows-latest, macos-latest]
+        os: [windows-latest, macos-latest, ubuntu-latest]
 
     env:
       #
@@ -32,6 +32,14 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
+
+    - name: Use g++-10 tools on Linux
+      if: ${{ matrix.os }} == 'ubuntu-latest'
+      run: |
+        for name in g++ gcc gcc-ar gcc-nm gcc-ranlib gcov gcov-dump gcov-tool
+        do
+          sudo update-alternatives --install /usr/bin/${name} ${name} /usr/bin/${name}-10 10
+        done
 
     - name: Install package manager
       #
@@ -53,7 +61,7 @@ jobs:
       #
       run: >
         cmake 
-        -B ${{ github.workspace }}/build
+        -B build
         -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
         -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/build/vcpkg/scripts/buildsystems/vcpkg.cmake
 
