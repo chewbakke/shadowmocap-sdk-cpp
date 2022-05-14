@@ -23,6 +23,24 @@ TEST_CASE("make_message_view", "[message]")
 
         CHECK(std::size(output) == 5);
     }
+
+    {
+        using item_type = message_view_item<10>;
+
+        auto input = std::string(sizeof(item_type) + 1, 0);
+        auto output = make_message_view<10>(input);
+
+        CHECK(std::size(output) == 0);
+    }
+
+    {
+        using item_type = message_view_item<1>;
+
+        auto input = std::string();
+        auto output = make_message_view<1>(input);
+
+        CHECK(std::size(output) == 0);
+    }
 }
 
 TEST_CASE("is_metadata", "[message]")
@@ -79,6 +97,24 @@ TEST_CASE("parse_metadata", "[message]")
 
         REQUIRE(output == expected);
     }
+
+    {
+        auto input = "Not XML at all";
+        auto expected = std::vector<std::string>{};
+
+        auto output = parse_metadata(input);
+
+        REQUIRE(output == expected);
+    }
+
+    {
+        auto input = "<node id=\"default\" key=\"0\"></node>";
+        auto expected = std::vector<std::string>{};
+
+        auto output = parse_metadata(input);
+
+        REQUIRE(output == expected);
+    }    
 }
 
 TEST_CASE("make_channel_message", "[message]")

@@ -80,7 +80,7 @@ std::vector<std::string> parse_metadata(std::string_view message);
  *
  * @code
  * auto message = make_channel_message<std::string>(channel::Lq | channel::c);
- * // message == "<configurable><Lq/><c/></configurable>"
+ * message == "<configurable><Lq/><c/></configurable>"
  * @endcode
  */
 std::string make_channel_message(int mask);

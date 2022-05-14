@@ -48,11 +48,15 @@ TEST_CASE("channel_string_names", "[channel]")
     static_assert(std::size(ChannelList) == 28);
 
     for (auto c : ChannelList) {
-        const char *const name = get_channel_name(c);
+        auto name = get_channel_name(c);
 
         REQUIRE(name != nullptr);
         REQUIRE(strlen(name) > 0);
     }
+
+    auto name = get_channel_name(channel::None);
+    REQUIRE(name != nullptr);
+    REQUIRE(strlen(name) > 0);
 }
 
 TEST_CASE("channel_mask_dimension", "[channel]")

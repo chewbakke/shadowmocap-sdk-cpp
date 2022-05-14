@@ -70,15 +70,14 @@ constexpr auto NumChannel = std::size(ChannelList);
  * @code
  * int mask = channel::Gq | channel::Gdq | channel::la;
  * if (mask & channel::Gq) {
- *   // ...
+ *     ...
  * }
  * @endcode
  */
 template <typename T>
 constexpr int operator&(T lhs, channel rhs)
 {
-    static_assert(
-        std::is_integral<T>::value || std::is_same<T, channel>::value);
+    static_assert(std::is_integral_v<T> || std::is_same_v<T, channel>);
 
     return static_cast<int>(lhs) & static_cast<int>(rhs);
 }
@@ -92,8 +91,7 @@ constexpr int operator&(T lhs, channel rhs)
 template <typename T>
 constexpr int operator|(T lhs, channel rhs)
 {
-    static_assert(
-        std::is_integral<T>::value || std::is_same<T, channel>::value);
+    static_assert(std::is_integral_v<T> || std::is_same_v<T, channel>);
 
     return static_cast<int>(lhs) | static_cast<int>(rhs);
 }
@@ -152,7 +150,6 @@ constexpr int get_channel_dimension(channel c)
     case channel::atm:
     case channel::elev:
         return 1;
-    case channel::None:
     default:
         return 0;
     };
@@ -163,7 +160,7 @@ constexpr int get_channel_dimension(channel c)
  * get_channel_name(channel::a) -> "a"
  * get_channel_name(channel::Lq) -> "Lq"
  */
-constexpr const char *const get_channel_name(channel c)
+constexpr const char *get_channel_name(channel c)
 {
     switch (c) {
     case channel::Gq:
@@ -222,7 +219,6 @@ constexpr const char *const get_channel_name(channel c)
         return "atm";
     case channel::elev:
         return "elev";
-    case channel::None:
     default:
         return "None";
     }
