@@ -1,0 +1,8 @@
+[requires]
+asio/1.22.1
+benchmark/1.6.1
+catch2/2.13.9
+
+[generators]
+CMakeDeps
+CMakeToolchain

@@ -12,6 +12,11 @@ CMake.
 git clone https://github.com/Microsoft/vcpkg.git [...]
 ```
 
+```
+mkdir build && cd build
+conan install .. --build=missing
+```
+
 ## Configure
 
 ```console
@@ -19,6 +24,14 @@ cmake \
     -B build \
     -DCMAKE_BUILD_TYPE=Release \
     -DCMAKE_TOOLCHAIN_FILE=[...]/scripts/buildsystems/vcpkg.cmake
+```
+
+```console
+cmake \
+    -B build \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_POLICY_DEFAULT_CMP0091=NEW \
+    -DCMAKE_TOOLCHAIN_FILE=build/conan_toolchain.cmake
 ```
 
 ## Build
