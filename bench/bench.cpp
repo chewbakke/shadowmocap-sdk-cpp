@@ -10,7 +10,7 @@ std::vector<int> make_random_masks(std::size_t n)
     std::random_device rd;
     std::mt19937 gen(rd());
 
-    std::uniform_int_distribution<int> dis(1, AllChannelMask);
+    std::uniform_int_distribution<int> dis(1, shadowmocap::AllChannelMask);
 
     std::vector<int> buf(n);
     std::generate(std::begin(buf), std::end(buf), [&]() { return dis(gen); });
@@ -34,6 +34,6 @@ void BM_Channel(benchmark::State &state)
     }
 }
 
-BENCHMARK(BM_Channel)->Range({1 << 8, 1 << 9});
+BENCHMARK(BM_Channel)->Range(1 << 8, 1 << 9);
 
 BENCHMARK_MAIN();
