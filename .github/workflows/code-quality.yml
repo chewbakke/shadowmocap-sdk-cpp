@@ -1,0 +1,91 @@
+name: Code quality checks
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-20.04
+    
+    env:
+      #
+      # Customize the CMake build type (Release, Debug, RelWithDebInfo, etc.)
+      #
+      BUILD_TYPE: Debug
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Install sonar-scanner
+      #
+      # https://github.com/Warchant/setup-sonar-scanner
+      #
+      uses: warchant/setup-sonar-scanner@v3
+      with:
+        version: 4.7.0.2747
+
+    - name: Install package dependencies
+      run: sudo apt-get install -y gcovr
+
+    - name: Install package manager
+      run: pip3 install conan && conan profile new default --detect
+
+    - name: Install dependencies
+      #
+      # Download packages listed in our manifest. Generate toolchain file for
+      # CMake so that we can find the packages from our project.
+      #
+      run: >
+        mkdir build
+        && cd build
+        && conan install .. --build=missing
+
+    - name: Configure
+      #
+      # Configure CMake in the "build" subdirectory.
+      #
+      working-directory: build
+      run: >
+        cmake -B . -S ..
+        -DENABLE_TEST_COVERAGE=ON
+        -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
+        -DCMAKE_CXX_COMPILER=$(which g++-10)
+        -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+        -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake
+
+    - name: Build
+      #
+      # Build all enabled programs with the current configuration.
+      #
+      working-directory: build
+      run: cmake --build . --config ${{ env.BUILD_TYPE }}
+
+    - name: Test
+      #
+      # Execute tests defined by the CMake configuration. In our project this
+      # is any executable target that has an associated add_test(NAME target).
+      #
+      # Example:
+      #   add_executable(unit_test unit_test.cpp)
+      #   add_test(UnitTestName unit_test)
+      #
+      working-directory: build
+      run: ctest -C ${{ env.BUILD_TYPE }}
+
+    - name: Create coverage report
+      #
+      # Compile all coverage files into one report for sonarcloud
+      #
+      working-directory: build
+      run: make coverage
+
+    - name: Run sonar-scanner
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      run: >
+        sonar-scanner
+        --define sonar.cfamily.compile-commands=build/compile_commands.json
