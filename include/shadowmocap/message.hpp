@@ -1,3 +1,4 @@
+// Copyright Motion Workshop. All Rights Reserved.
 #pragma once
 
 #include <shadowmocap/channel.hpp>
@@ -53,6 +54,13 @@ std::span<message_view_item<N>> make_message_view(std::span<char> message)
     auto count = std::size(message) / sizeof(item_type);
 
     return {first, count};
+}
+
+/// Helper to convert std::string and std::vector<char> to std::span<char>
+template <std::size_t N, typename T>
+std::span<message_view_item<N>> make_message_view(T &message)
+{
+    return make_message_view<N>(std::span<char>(message.data(), message.size()));
 }
 
 /// Returns whether a binary message from the Shadow data service is metadata

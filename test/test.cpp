@@ -1,6 +1,3 @@
-#define CATCH_CONFIG_MAIN
-#include <catch2/catch.hpp>
-
 #include <shadowmocap.hpp>
 
 #include <asio/awaitable.hpp>
@@ -8,6 +5,7 @@
 #include <asio/experimental/awaitable_operators.hpp>
 #include <asio/io_context.hpp>
 #include <asio/ip/tcp.hpp>
+#include <catch2/catch_test_macros.hpp>
 
 #include <chrono>
 #include <exception>
@@ -19,7 +17,7 @@ using tcp = shadowmocap::tcp;
 
 asio::awaitable<void> read_shadowmocap_datastream_frames(
     shadowmocap::datastream<tcp> stream,
-    std::shared_ptr<std::chrono::steady_clock::time_point> deadline)
+    std::chrono::steady_clock::time_point &deadline)
 {
     using namespace shadowmocap;
     using namespace std::chrono_literals;
@@ -39,9 +37,7 @@ asio::awaitable<void> read_shadowmocap_datastream_frames(
 
     std::size_t num_bytes = 0;
     for (int i = 0; i < 100; ++i) {
-        if (deadline) {
-            extend_deadline_for(*deadline, 1s);
-        }
+        extend_deadline_for(deadline, 1s);
 
         auto message = co_await read_message<std::string>(stream);
         num_bytes += std::size(message);
@@ -75,13 +71,13 @@ asio::awaitable<void> read_shadowmocap_datastream_frames(
                 throw std::length_error("message item channel size mismatch");
             }
 
-            std::cout << item.key << " " << item.length << " = ";
+            std::cout << "key=" << item.key << ", len=" << item.length << ", data=[";
 
             std::copy(
                 std::begin(item.data), std::end(item.data),
                 std::ostream_iterator<float>(std::cout, ", "));
 
-            std::cout << "\n";
+            std::cout << "]\n";
         }
     }
 
@@ -99,8 +95,8 @@ asio::awaitable<void> read_shadowmocap_datastream(tcp::endpoint endpoint)
 
     auto stream = co_await open_connection(std::move(endpoint));
 
-    auto deadline = std::make_shared<std::chrono::steady_clock::time_point>();
-    extend_deadline_for(*deadline, 5s);
+    std::chrono::steady_clock::time_point deadline{};
+    extend_deadline_for(deadline, 5s);
 
     co_await(
         read_shadowmocap_datastream_frames(std::move(stream), deadline) ||
@@ -116,7 +112,7 @@ bool run()
         asio::io_context ctx;
 
         auto endpoint = *tcp::resolver(ctx).resolve(host, service);
-
+        
         co_spawn(
             ctx, read_shadowmocap_datastream(std::move(endpoint)),
             [](auto ptr) {
@@ -136,7 +132,7 @@ bool run()
     return false;
 }
 
-TEST_CASE("read_shadowmocap_datastream")
+TEST_CASE("read", "[datastream]")
 {
     REQUIRE(run());
 }

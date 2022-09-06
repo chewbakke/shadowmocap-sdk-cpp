@@ -1,10 +1,10 @@
-#include <catch2/catch.hpp>
-
 #include <shadowmocap/channel.hpp>
+
+#include <catch2/catch_test_macros.hpp>
 
 #include <cstring>
 
-TEST_CASE("channel_bitwise_operators", "[channel]")
+TEST_CASE("bitwise_operators", "[channel]")
 {
     using namespace shadowmocap;
 
@@ -27,7 +27,7 @@ TEST_CASE("channel_bitwise_operators", "[channel]")
     REQUIRE(cmask == 0);
 }
 
-TEST_CASE("channel_dimension", "[channel]")
+TEST_CASE("dimension", "[channel]")
 {
     using namespace shadowmocap;
 
@@ -41,7 +41,7 @@ TEST_CASE("channel_dimension", "[channel]")
     REQUIRE(dim == 0);
 }
 
-TEST_CASE("channel_string_names", "[channel]")
+TEST_CASE("string_names", "[channel]")
 {
     using namespace shadowmocap;
 
@@ -51,15 +51,15 @@ TEST_CASE("channel_string_names", "[channel]")
         auto name = get_channel_name(c);
 
         REQUIRE(name != nullptr);
-        REQUIRE(strlen(name) > 0);
+        REQUIRE(std::strlen(name) > 0);
     }
 
     auto name = get_channel_name(channel::None);
     REQUIRE(name != nullptr);
-    REQUIRE(strlen(name) > 0);
+    REQUIRE(std::strlen(name) > 0);
 }
 
-TEST_CASE("channel_mask_dimension", "[channel]")
+TEST_CASE("mask_dimension", "[channel]")
 {
     using namespace shadowmocap;
 

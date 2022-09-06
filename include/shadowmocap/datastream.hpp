@@ -1,3 +1,4 @@
+// Copyright Motion Workshop. All Rights Reserved.
 #pragma once
 
 #include <shadowmocap/message.hpp>
@@ -17,7 +18,6 @@
 
 #include <chrono>
 #include <exception>
-#include <memory>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -104,13 +104,13 @@ asio::awaitable<datastream<tcp>> open_connection(tcp::endpoint endpoint);
  *
  * @code
  * for (;;) {
- *   *deadline = now() + 1s;
+ *   deadline = now() + 1s;
  *   co_await asio::async_read(stream.socket_, ...);
  * }
  * @endcode
  */
 asio::awaitable<void>
-watchdog(std::shared_ptr<std::chrono::steady_clock::time_point> deadline);
+watchdog(std::chrono::steady_clock::time_point &deadline);
 
 /**
  * Extend the deadline time by at least the duration. Intended for use with

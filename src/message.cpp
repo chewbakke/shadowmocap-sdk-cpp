@@ -1,3 +1,4 @@
+// Copyright Motion Workshop. All Rights Reserved.
 #include <shadowmocap/message.hpp>
 
 #include <algorithm>

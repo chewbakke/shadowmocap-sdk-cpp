@@ -1,3 +1,4 @@
+// Copyright Motion Workshop. All Rights Reserved.
 #include <shadowmocap/datastream.hpp>
 
 #include <asio/ip/tcp.hpp>
@@ -33,7 +34,7 @@ write_message(datastream<tcp> &stream, std::string_view message)
 
 asio::awaitable<datastream<tcp>> open_connection(tcp::endpoint endpoint)
 {
-    tcp::socket socket{co_await asio::this_coro::executor};
+    tcp::socket socket(co_await asio::this_coro::executor);
     co_await socket.async_connect(endpoint, asio::use_awaitable);
 
     // Turn off Nagle algorithm. We are streaming many small packets and intend
@@ -52,13 +53,13 @@ asio::awaitable<datastream<tcp>> open_connection(tcp::endpoint endpoint)
 }
 
 asio::awaitable<void>
-watchdog(std::shared_ptr<std::chrono::steady_clock::time_point> deadline)
+watchdog(std::chrono::steady_clock::time_point &deadline)
 {
-    asio::steady_timer timer{co_await asio::this_coro::executor};
+    asio::steady_timer timer(co_await asio::this_coro::executor);
 
     auto now = std::chrono::steady_clock::now();
-    while (*deadline > now) {
-        timer.expires_at(*deadline);
+    while (deadline > now) {
+        timer.expires_at(deadline);
         co_await timer.async_wait(asio::use_awaitable);
         now = std::chrono::steady_clock::now();
     }
