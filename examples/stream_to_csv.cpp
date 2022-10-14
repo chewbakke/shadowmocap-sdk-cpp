@@ -22,13 +22,13 @@ struct command_line_options {
       successful, -1 if the command line options are invalid, or 1 if the help
       message should be printed out.
     */
-    int parse(int argc, char **argv);
+    int parse(int argc, char* argv[]);
 
     /**
       Print command line usage help for this program. Returns 1 which is
       intended to be the main return code as well.
     */
-    int print_help(std::ostream *out, char *program_name);
+    int print_help(std::ostream* out, char* program_name);
 
     /**
       Store an error or informational message about why the parse phase failed.
@@ -68,7 +68,7 @@ struct command_line_options {
 
 asio::awaitable<void> read_shadowmocap_datastream_frames(
     command_line_options options, shadowmocap::datastream<tcp> stream,
-    std::shared_ptr<std::chrono::steady_clock::time_point> deadline)
+    std::chrono::steady_clock::time_point& deadline)
 {
     using namespace shadowmocap;
     using namespace std::chrono_literals;
@@ -87,9 +87,7 @@ asio::awaitable<void> read_shadowmocap_datastream_frames(
 
     int num_frames = 0;
     for (;;) {
-        if (deadline) {
-            extend_deadline_for(*deadline, 1s);
-        }
+        extend_deadline_for(deadline, 1s);
 
         auto message = co_await read_message<std::string>(stream);
 
@@ -112,14 +110,14 @@ asio::awaitable<void> read_shadowmocap_datastream_frames(
                         channel_names.push_back(prefix + "w");
                     }
 
-                    for (const auto &axis : {"x", "y", "z"}) {
+                    for (const auto& axis : {"x", "y", "z"}) {
                         channel_names.push_back(prefix + axis);
                     }
                 }
             }
 
-            for (auto &name : stream.names_) {
-                for (auto &channel_name : channel_names) {
+            for (auto& name : stream.names_) {
+                for (auto& channel_name : channel_names) {
                     if (column++ > 0) {
                         line << options.separator;
                     }
@@ -136,8 +134,8 @@ asio::awaitable<void> read_shadowmocap_datastream_frames(
         }
 
         auto view = make_message_view<ItemSize>(message);
-        for (auto &item : view) {
-            for (auto &value : item.data) {
+        for (auto& item : view) {
+            for (auto& value : item.data) {
                 if (column++ > 0) {
                     line << options.separator;
                 }
@@ -177,10 +175,10 @@ asio::awaitable<void> read_shadowmocap_datastream(
         co_await write_message(stream, xml);
     }
 
-    auto deadline = std::make_shared<std::chrono::steady_clock::time_point>();
-    extend_deadline_for(*deadline, 1s);
+    std::chrono::steady_clock::time_point deadline{};
+    extend_deadline_for(deadline, 1s);
 
-    co_await(
+    co_await (
         read_shadowmocap_datastream_frames(
             std::move(options), std::move(stream), deadline) ||
         watchdog(deadline));
@@ -208,14 +206,14 @@ bool stream_data_to_csv(command_line_options options)
         ctx.run();
 
         return true;
-    } catch (std::exception &e) {
+    } catch (std::exception& e) {
         std::cerr << e.what() << "\n";
     }
 
     return false;
 }
 
-int main(int argc, char **argv)
+int main(int argc, char* argv[])
 {
     command_line_options options;
     if (options.parse(argc, argv) != 0) {
@@ -230,7 +228,7 @@ int main(int argc, char **argv)
     return 0;
 }
 
-int command_line_options::parse(int argc, char **argv)
+int command_line_options::parse(int argc, char* argv[])
 {
     for (int i = 1; i < argc; ++i) {
         const std::string arg(argv[i]);
@@ -263,7 +261,7 @@ int command_line_options::parse(int argc, char **argv)
     return 0;
 }
 
-int command_line_options::print_help(std::ostream *out, char *program_name)
+int command_line_options::print_help(std::ostream* out, char* program_name)
 {
     if (!message.empty()) {
         *out << message << newline << newline;

@@ -1,3 +1,4 @@
+// Copyright Motion Workshop. All Rights Reserved.
 #include <shadowmocap/message.hpp>
 
 #include <algorithm>
@@ -39,7 +40,7 @@ std::vector<std::string> parse_metadata(std::string_view message)
     // <node id="A"/><node id="B"/> -> ["A", "B"]
     auto name_list = std::vector<std::string>(num_node);
 
-    std::transform(first, last, std::begin(name_list), [](auto &match) {
+    std::transform(first, last, std::begin(name_list), [](auto& match) {
         // Return submatch #1 as a string, the id="..." attribute.
         return match.str(1);
     });

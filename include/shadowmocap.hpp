@@ -1,3 +1,4 @@
+// Copyright Motion Workshop. All Rights Reserved.
 #pragma once
 
 #include <shadowmocap/channel.hpp>

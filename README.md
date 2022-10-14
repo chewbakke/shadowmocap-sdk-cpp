@@ -1,51 +1,10 @@
-ShadowMocap SDK C++
-====
+# ShadowMocap SDK C++
 
-# Build with CMake
+[![test](https://github.com/luketokheim/shadowmocap-sdk-cpp/actions/workflows/test.yml/badge.svg)](https://github.com/luketokheim/shadowmocap-sdk-cpp/actions/workflows/test.yml)
 
-Build the test, benchmark, and example apps with CMake.
+Experimental dev kit client using C++ coroutines.
 
-## Install package manager
-```console
-git clone https://github.com/Microsoft/vcpkg.git [...]
-```
-
-```
-mkdir build && cd build
-conan install .. --build=missing
-```
-
-## Configure
-
-```console
-cmake \
-    -B build \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_TOOLCHAIN_FILE=[...]/scripts/buildsystems/vcpkg.cmake
-```
-
-```console
-cmake \
-    -B build \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DCMAKE_POLICY_DEFAULT_CMP0091=NEW \
-    -DCMAKE_TOOLCHAIN_FILE=build/conan_toolchain.cmake
-```
-
-## Build
-
-```console
-cmake --build build --config Release
-```
-
-## Test
-
-```console
-cd build
-ctest -C Release
-```
-
-# Compiler support
+## Compilers
 
 This project requires C++20 support for coroutines and span container.
 
@@ -53,6 +12,38 @@ This project requires C++20 support for coroutines and span container.
 - Clang 13
 - G++ 10
 
-# License
+## Package managers
+
+This project uses the [conan](https://conan.io/) C++ package manager to build
+for Continuous Integration (CI).
+
+## Build
+
+Create a build folder and install dependencies with the package manager.
+
+```
+mkdir build
+cd build
+conan install .. --build=missing
+```
+
+Use the toolchain file created by the package manager so cmake can locate
+libraries with [find_package](https://cmake.org/cmake/help/latest/command/find_package.html).
+
+```console
+cmake .. \
+    -DCMAKE_BUILD_TYPE=Release \
+    -DCMAKE_TOOLCHAIN_FILE=conan_toolchain.cmake \
+    -DCMAKE_POLICY_DEFAULT_CMP0091=NEW
+cmake --build . --config=Release
+```
+
+Run tests.
+
+```console
+ctest -C Release
+```
+
+## License
 
 This project is distributed under a permissive [BSD License](LICENSE).

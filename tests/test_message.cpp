@@ -1,6 +1,6 @@
-#include <catch2/catch.hpp>
-
 #include <shadowmocap/message.hpp>
+
+#include <catch2/catch_test_macros.hpp>
 
 TEST_CASE("make_message_view", "[message]")
 {
@@ -72,10 +72,9 @@ TEST_CASE("parse_metadata", "[message]")
     using namespace shadowmocap;
 
     {
-        auto input =
-            "<node id=\"default\" key=\"0\">"
-            "<node id=\"Name1\" key=\"1\"/>"
-            "</node>";
+        auto input = "<node id=\"default\" key=\"0\">"
+                     "<node id=\"Name1\" key=\"1\"/>"
+                     "</node>";
         auto expected = std::vector<std::string>{"Name1"};
 
         auto output = parse_metadata(input);
@@ -84,13 +83,12 @@ TEST_CASE("parse_metadata", "[message]")
     }
 
     {
-        auto input =
-            "<?xml version=\"1.0\" encoding=\"utf\"?>"
-            "<node id=\"default\" key=\"0\" tracking=\"1\">"
-            "<node id=\"NameZ\" key=\"1\"/>"
-            "<node id=\"NameX\" key=\"2\" active=\"0\"/>"
-            "<node id=\"NameY\" key=\"3\"/>"
-            "</node>";
+        auto input = "<?xml version=\"1.0\" encoding=\"utf\"?>"
+                     "<node id=\"default\" key=\"0\" tracking=\"1\">"
+                     "<node id=\"NameZ\" key=\"1\"/>"
+                     "<node id=\"NameX\" key=\"2\" active=\"0\"/>"
+                     "<node id=\"NameY\" key=\"3\"/>"
+                     "</node>";
         auto expected = std::vector<std::string>{"NameZ", "NameX", "NameY"};
 
         auto output = parse_metadata(input);
@@ -114,7 +112,7 @@ TEST_CASE("parse_metadata", "[message]")
         auto output = parse_metadata(input);
 
         REQUIRE(output == expected);
-    }    
+    }
 }
 
 TEST_CASE("make_channel_message", "[message]")

@@ -20,7 +20,7 @@ std::vector<char> make_random_bytes(std::size_t n)
 }
 
 template <int N>
-void BM_MessageViewCreation(benchmark::State &state)
+void BM_MessageViewCreation(benchmark::State& state)
 {
     using namespace shadowmocap;
     using item_type = message_view_item<N>;
