@@ -1,13 +1,13 @@
-# We need to build with C++20 or newer
-# cxx_std_20: New in version 3.12
-cmake_minimum_required(VERSION 3.12)
+# cxx_std_20 requires 3.12
+# conan generator requires 3.15
+cmake_minimum_required(VERSION 3.15)
 
 project(shadowmocap)
 
 # shadowmocap is a C++20 library
 add_library(shadowmocap src/datastream.cpp src/message.cpp)
 target_compile_features(shadowmocap PUBLIC cxx_std_20)
-target_include_directories(shadowmocap PUBLIC include/)
+target_include_directories(shadowmocap PUBLIC include)
 
 # g++10 or newer on Linux
 if(CMAKE_COMPILER_IS_GNUCXX)
@@ -17,7 +17,7 @@ if(CMAKE_COMPILER_IS_GNUCXX)
 endif()
 
 # Asio 1.22 or newer required
-find_package(asio CONFIG REQUIRED)
+find_package(asio REQUIRED)
 target_link_libraries(shadowmocap PUBLIC asio::asio)
 
 option(

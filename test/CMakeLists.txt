@@ -1,11 +1,14 @@
-find_package(Catch2 CONFIG REQUIRED)
+find_package(Catch2 REQUIRED)
 find_package(Python)
 
-add_executable(shadowmocap_test test.cpp test_channel.cpp test_message.cpp)
+add_executable(
+    shadowmocap_test
+    test.cpp
+    test_channel.cpp
+    test_message.cpp)
 
 target_link_libraries(
-    shadowmocap_test
-    PRIVATE
+    shadowmocap_test PRIVATE
     shadowmocap
     Catch2::Catch2WithMain)
 
