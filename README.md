@@ -1,6 +1,5 @@
 # ShadowMocap SDK C++
 
-[![sanitizer](https://github.com/luketokheim/shadowmocap-sdk-cpp/actions/workflows/sanitizer.yml/badge.svg)](https://github.com/luketokheim/shadowmocap-sdk-cpp/actions/workflows/sanitizer.yml)
 [![test](https://github.com/luketokheim/shadowmocap-sdk-cpp/actions/workflows/test.yml/badge.svg)](https://github.com/luketokheim/shadowmocap-sdk-cpp/actions/workflows/test.yml)
 
 Experimental dev kit client using C++ coroutines.
