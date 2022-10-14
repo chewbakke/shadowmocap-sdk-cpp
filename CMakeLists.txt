@@ -30,10 +30,6 @@ if (ENABLE_TEST_COVERAGE)
     target_link_options(shadowmocap PUBLIC --coverage)
 
     find_program(GCOVR_PATH gcovr REQUIRED)
-    add_custom_target(
-        coverage
-        COMMAND
-        ${GCOVR_PATH} --sonarqube coverage.xml --root ${PROJECT_SOURCE_DIR})
 endif()
 
 option(
@@ -46,12 +42,12 @@ if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME)
 endif()
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND BUILD_TESTING)
-    add_subdirectory(test)
+    add_subdirectory(tests)
     if(ENABLE_TEST_BENCHMARK)
         add_subdirectory(bench)
     endif()
 endif()
 
 if(CMAKE_PROJECT_NAME STREQUAL PROJECT_NAME AND WIN32)
-    add_subdirectory(example)
+    add_subdirectory(examples)
 endif()
