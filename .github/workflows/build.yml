@@ -1,11 +1,11 @@
 #
-# Workflow for C++ continuous integration (CI) with cmake and vcpkg
+# Workflow for C++ continuous integration (CI) with cmake and conan
 # - Run on pull request and push to main branch
-# - Install dependencies with vcpkg
+# - Install dependencies with conan
 # - Use CMake to configure and build
-# - Use CTest run the main target
+# - Use CTest to run tests
 #
-name: Build
+name: test
 
 on:
   push:
@@ -18,59 +18,43 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     strategy:
-      #
-      # https://docs.github.com/en/actions/using-jobs/using-a-build-matrix-for-your-jobs
-      #
       matrix:
-        os: [windows-latest, macos-latest, ubuntu-latest]
-
-    env:
-      #
-      # Customize the CMake build type (Release, Debug, RelWithDebInfo, etc.)
-      #
-      BUILD_TYPE: Release
+        os: [windows-2022, macos-12, ubuntu-22.04]
 
     steps:
     - uses: actions/checkout@v3
 
-    - name: Use g++-10 tools on Linux
-      if: matrix.os == 'ubuntu-latest'
-      run: |
-        for name in g++ gcc gcc-ar gcc-nm gcc-ranlib gcov gcov-dump gcov-tool
-        do
-          sudo update-alternatives --install /usr/bin/${name} ${name} /usr/bin/${name}-10 10
-        done
-
     - name: Install package manager
+      run: >
+        pip3 install conan
+        && conan profile new default --detect
+
+    - name: Install dependencies
       #
-      # Use vcpkg in Manifest Mode. The CMake integration will bootstrap vcpkg
-      # and install dependencies for our current build environment! This is
-      # awesome because we do not need to set the package triplet explicitly.
-      #
-      # https://github.com/microsoft/vcpkg/blob/master/docs/users/manifests.md
+      # Download packages listed in our manifest. Generate toolchain file for
+      # CMake so that we can use find_package(...) to find deps
       #
       run: >
-        git clone
-        https://github.com/Microsoft/vcpkg.git
-        ${{ github.workspace }}/build/vcpkg/
+        install -d build
+        && cd build
+        && conan install .. --build=missing
 
     - name: Configure
       #
-      # Configure CMake in the "build" subdirectory. This will also install
-      # vcpkg dependencies from our project manifest file automagically.
+      # Configure CMake in the "build" subdirectory.
       #
+      working-directory: build
       run: >
-        cmake 
-        -B build
-        -DCMAKE_BUILD_TYPE=${{ env.BUILD_TYPE }}
-        -DCMAKE_TOOLCHAIN_FILE=${{ github.workspace }}/build/vcpkg/scripts/buildsystems/vcpkg.cmake
+        cmake ..
+        -DCMAKE_BUILD_TYPE=Release
+        -DCMAKE_TOOLCHAIN_FILE="conan_toolchain.cmake"
 
     - name: Build
       #
-      # Build all enabled programs with the given configuration.
+      # Build all enabled programs with the current configuration.
       #
       working-directory: build
-      run: cmake --build . --config ${{ env.BUILD_TYPE }}
+      run: cmake --build . --config Release
 
     - name: Test
       #
@@ -82,4 +66,4 @@ jobs:
       #   add_test(UnitTestName unit_test)
       #
       working-directory: build
-      run: ctest -C ${{ env.BUILD_TYPE }}
+      run: ctest -C Release
