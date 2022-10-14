@@ -16,6 +16,12 @@ if(CMAKE_COMPILER_IS_GNUCXX)
     target_link_libraries(shadowmocap PUBLIC ${CMAKE_THREAD_LIBS_INIT})
 endif()
 
+# clang++-13 or newer on Linux
+if (CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    target_compile_options(shadowmocap PUBLIC -stdlib=libc++)
+    target_link_options(shadowmocap PUBLIC -stdlib=libc++)
+endif()
+
 # Asio 1.22 or newer required
 find_package(asio REQUIRED)
 target_link_libraries(shadowmocap PUBLIC asio::asio)
