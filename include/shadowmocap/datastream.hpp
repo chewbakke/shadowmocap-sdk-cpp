@@ -36,7 +36,7 @@ struct datastream {
 }; // struct datastream
 
 template <typename Message>
-asio::awaitable<Message> read_message(tcp::socket &socket)
+asio::awaitable<Message> read_message(tcp::socket& socket)
 {
     static_assert(
         sizeof(typename Message::value_type) == sizeof(char),
@@ -60,7 +60,7 @@ asio::awaitable<Message> read_message(tcp::socket &socket)
 }
 
 template <typename Message>
-asio::awaitable<Message> read_message(datastream<tcp> &stream)
+asio::awaitable<Message> read_message(datastream<tcp>& stream)
 {
     auto message = co_await read_message<Message>(stream.socket_);
 
@@ -77,10 +77,10 @@ asio::awaitable<Message> read_message(datastream<tcp> &stream)
  * Write a binary message with its length header to the stream.
  */
 asio::awaitable<void>
-write_message(tcp::socket &socket, std::string_view message);
+write_message(tcp::socket& socket, std::string_view message);
 
 asio::awaitable<void>
-write_message(datastream<tcp> &stream, std::string_view message);
+write_message(datastream<tcp>& stream, std::string_view message);
 
 asio::awaitable<datastream<tcp>> open_connection(tcp::endpoint endpoint);
 
@@ -109,8 +109,7 @@ asio::awaitable<datastream<tcp>> open_connection(tcp::endpoint endpoint);
  * }
  * @endcode
  */
-asio::awaitable<void>
-watchdog(std::chrono::steady_clock::time_point &deadline);
+asio::awaitable<void> watchdog(std::chrono::steady_clock::time_point& deadline);
 
 /**
  * Extend the deadline time by at least the duration. Intended for use with
@@ -118,8 +117,8 @@ watchdog(std::chrono::steady_clock::time_point &deadline);
  */
 template <class Rep, class Period>
 void extend_deadline_for(
-    std::chrono::steady_clock::time_point &deadline,
-    const std::chrono::duration<Rep, Period> &timeout_duration)
+    std::chrono::steady_clock::time_point& deadline,
+    const std::chrono::duration<Rep, Period>& timeout_duration)
 {
     deadline =
         std::max(deadline, std::chrono::steady_clock::now() + timeout_duration);

@@ -27,7 +27,7 @@ struct message_view_item {
  * Zero copy and zero allocation. The resulting span references the memory
  * passed in using the message parameter. The resulting span is invalidated if
  * the message buffer is modified or deallocated.
- *  
+ *
  * message = [item0, ..., itemM)
  * item = [int = key] [int = N] [float0, ..., floatN)
  *
@@ -49,8 +49,8 @@ std::span<message_view_item<N>> make_message_view(std::span<char> message)
         return {};
     }
 
-    auto *first = 
-        static_cast<item_type *>(static_cast<void *>(std::data(message)));
+    auto* first =
+        static_cast<item_type*>(static_cast<void*>(std::data(message)));
     auto count = std::size(message) / sizeof(item_type);
 
     return {first, count};
@@ -58,9 +58,10 @@ std::span<message_view_item<N>> make_message_view(std::span<char> message)
 
 /// Helper to convert std::string and std::vector<char> to std::span<char>
 template <std::size_t N, typename T>
-std::span<message_view_item<N>> make_message_view(T &message)
+std::span<message_view_item<N>> make_message_view(T& message)
 {
-    return make_message_view<N>(std::span<char>(message.data(), message.size()));
+    return make_message_view<N>(
+        std::span<char>(message.data(), message.size()));
 }
 
 /// Returns whether a binary message from the Shadow data service is metadata

@@ -3,7 +3,7 @@ Language: Cpp
 AccessModifierOffset: -4
 AlignAfterOpenBracket: AlwaysBreak
 AlignEscapedNewlines: DontAlign
-AlwaysBreakTemplateDeclarations: true
+AlwaysBreakTemplateDeclarations: Yes
 AllowShortFunctionsOnASingleLine: None
 BreakBeforeBraces: Custom
 BraceWrapping:
@@ -28,6 +28,6 @@ IncludeCategories:
   # Everything else, third party library headers
   - Regex:    '.*'
     Priority: 1
-# IndentAccessModifiers: false
 IndentWidth: 4
-Standard: Cpp11
+PointerAlignment: Left
+Standard: c++20

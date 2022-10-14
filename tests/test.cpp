@@ -17,7 +17,7 @@ using tcp = shadowmocap::tcp;
 
 asio::awaitable<void> read_shadowmocap_datastream_frames(
     shadowmocap::datastream<tcp> stream,
-    std::chrono::steady_clock::time_point &deadline)
+    std::chrono::steady_clock::time_point& deadline)
 {
     using namespace shadowmocap;
     using namespace std::chrono_literals;
@@ -64,14 +64,15 @@ asio::awaitable<void> read_shadowmocap_datastream_frames(
             throw std::length_error("message item count mismatch");
         }
 
-        for (auto &item : view) {
+        for (auto& item : view) {
             REQUIRE(item.length == ItemSize);
 
             if (item.length != ItemSize) {
                 throw std::length_error("message item channel size mismatch");
             }
 
-            std::cout << "key=" << item.key << ", len=" << item.length << ", data=[";
+            std::cout << "key=" << item.key << ", len=" << item.length
+                      << ", data=[";
 
             std::copy(
                 std::begin(item.data), std::end(item.data),
@@ -98,7 +99,7 @@ asio::awaitable<void> read_shadowmocap_datastream(tcp::endpoint endpoint)
     std::chrono::steady_clock::time_point deadline{};
     extend_deadline_for(deadline, 5s);
 
-    co_await(
+    co_await (
         read_shadowmocap_datastream_frames(std::move(stream), deadline) ||
         watchdog(deadline));
 }
@@ -112,7 +113,7 @@ bool run()
         asio::io_context ctx;
 
         auto endpoint = *tcp::resolver(ctx).resolve(host, service);
-        
+
         co_spawn(
             ctx, read_shadowmocap_datastream(std::move(endpoint)),
             [](auto ptr) {
@@ -125,7 +126,7 @@ bool run()
         ctx.run();
 
         return true;
-    } catch (std::exception &e) {
+    } catch (std::exception& e) {
         std::cerr << e.what() << "\n";
     }
 

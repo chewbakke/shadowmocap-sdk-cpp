@@ -11,7 +11,7 @@
 namespace shadowmocap {
 
 asio::awaitable<void>
-write_message(tcp::socket &socket, std::string_view message)
+write_message(tcp::socket& socket, std::string_view message)
 {
     if ((std::size(message) < MinMessageLength) ||
         (std::size(message) > MaxMessageLength)) {
@@ -27,7 +27,7 @@ write_message(tcp::socket &socket, std::string_view message)
 }
 
 asio::awaitable<void>
-write_message(datastream<tcp> &stream, std::string_view message)
+write_message(datastream<tcp>& stream, std::string_view message)
 {
     co_await write_message(stream.socket_, message);
 }
@@ -52,8 +52,7 @@ asio::awaitable<datastream<tcp>> open_connection(tcp::endpoint endpoint)
     co_return datastream<tcp>{std::move(socket)};
 }
 
-asio::awaitable<void>
-watchdog(std::chrono::steady_clock::time_point &deadline)
+asio::awaitable<void> watchdog(std::chrono::steady_clock::time_point& deadline)
 {
     asio::steady_timer timer(co_await asio::this_coro::executor);
 

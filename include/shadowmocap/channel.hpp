@@ -106,7 +106,7 @@ constexpr int operator|(T lhs, channel rhs)
  * mask |= channel::la;
  * @endcode
  */
-constexpr int &operator|=(int &lhs, channel rhs)
+constexpr int& operator|=(int& lhs, channel rhs)
 {
     lhs |= static_cast<int>(rhs);
     return lhs;
@@ -161,7 +161,7 @@ constexpr int get_channel_dimension(channel c)
  * get_channel_name(channel::a) -> "a"
  * get_channel_name(channel::Lq) -> "Lq"
  */
-constexpr const char *get_channel_name(channel c)
+constexpr const char* get_channel_name(channel c)
 {
     switch (c) {
     case channel::Gq:

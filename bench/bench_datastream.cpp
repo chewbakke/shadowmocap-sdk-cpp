@@ -41,10 +41,10 @@ run(asio::ip::tcp::endpoint endpoint, std::size_t m, std::size_t n)
 {
     using namespace asio::experimental::awaitable_operators;
 
-    co_await(server(endpoint, m) || client(endpoint, n));
+    co_await (server(endpoint, m) || client(endpoint, n));
 }
 
-void BM_DataStream(benchmark::State &state)
+void BM_DataStream(benchmark::State& state)
 {
     using tcp = shadowmocap::tcp;
 

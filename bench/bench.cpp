@@ -18,7 +18,7 @@ std::vector<int> make_random_masks(std::size_t n)
     return buf;
 }
 
-void BM_Channel(benchmark::State &state)
+void BM_Channel(benchmark::State& state)
 {
     using namespace shadowmocap;
 
@@ -26,7 +26,7 @@ void BM_Channel(benchmark::State &state)
 
     for (auto _ : state) {
         int v = 0;
-        for (auto item: data) {
+        for (auto item : data) {
             v |= get_channel_mask_dimension(item);
         }
 
