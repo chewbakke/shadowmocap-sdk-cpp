@@ -4,17 +4,17 @@
 
 #include <algorithm>
 #include <random>
-#include <vector>
+#include <string>
 
-std::vector<char> make_random_bytes(std::size_t n)
+std::string make_random_bytes(std::size_t n)
 {
     std::random_device rd;
     std::mt19937 gen(rd());
 
     std::uniform_int_distribution<int> dis(-128, 127);
 
-    std::vector<char> buf(n);
-    std::generate(std::begin(buf), std::end(buf), [&]() { return dis(gen); });
+    std::string buf(n, 0);
+    std::generate(buf.begin(), buf.end(), [&]() { return dis(gen); });
 
     return buf;
 }
@@ -23,12 +23,12 @@ template <int N>
 void BM_MessageViewCreation(benchmark::State& state)
 {
     using namespace shadowmocap;
-    using item_type = message_view_item<N>;
+    using item_type = message_list_item<N>;
 
     auto data = make_random_bytes(state.range(0) * sizeof(item_type));
 
     for (auto _ : state) {
-        auto v = make_message_view<N>(data);
+        auto v = make_message_list<N>(data);
         benchmark::DoNotOptimize(v);
     }
 
