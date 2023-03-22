@@ -3,11 +3,6 @@
 
 #include <shadowmocap/message.hpp>
 
-/// Set _WIN32_WINNT to the default for current Windows SDK
-#if defined(_WIN32) && !defined(_WIN32_WINNT)
-#include <SDKDDKVer.h>
-#endif
-
 #include <asio/awaitable.hpp>
 #include <asio/buffer.hpp>
 #include <asio/ip/tcp.hpp>
