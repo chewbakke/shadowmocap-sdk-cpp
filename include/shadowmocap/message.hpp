@@ -3,7 +3,7 @@
 
 #include <shadowmocap/channel.hpp>
 
-#include <span>
+#include <cstring>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -12,56 +12,50 @@ namespace shadowmocap {
 
 /**
  * Utility class that matches the packed binary layout of one item in a
- * measurement message. Use PODs such that we can overlay this object onto the
- * binary data with no copying. Use only 4 byte types to maintain alignment.
+ * measurement message. Use PODs such that we can use simple copy. Use only 4
+ * byte types to maintain alignment.
  */
 template <std::size_t N>
-struct message_view_item {
-    int key;
-    int length;
-    float data[N];
-}; // struct message_view_item
+struct message_list_item {
+    int key{};
+    int length{};
+    float data[N] = {};
+};
 
 /// Parse a binary message and return an iterable container of items.
 /**
- * Zero copy and zero allocation. The resulting span references the memory
- * passed in using the message parameter. The resulting span is invalidated if
- * the message buffer is modified or deallocated.
+ * Copy message bytes into a vector of structs.
  *
  * message = [item0, ..., itemM)
  * item = [int = key] [int = N] [float0, ..., floatN)
  *
  * @param message Container of bytes
- * @return A iterable span of fixed size items. Returns an empty list on error.
+ * @return A vector of fixed size items. Returns an empty vector on error.
  */
 template <std::size_t N>
-std::span<message_view_item<N>> make_message_view(std::span<char> message)
+std::vector<message_list_item<N>> make_message_list(std::string_view message)
 {
-    using item_type = message_view_item<N>;
+    using item_type = message_list_item<N>;
 
     static_assert(sizeof(item_type) == 2 * sizeof(int) + N * sizeof(float));
     static_assert(offsetof(item_type, key) == 0);
     static_assert(offsetof(item_type, length) == 4);
     static_assert(offsetof(item_type, data) == 8);
 
-    // Sanity checks. Return empty container if we fail.
-    if (std::empty(message) || (std::size(message) % sizeof(item_type) != 0)) {
+    // Sanity checks. Return empty container on failure.
+    if (message.empty() || (message.size() % sizeof(item_type) != 0)) {
         return {};
     }
 
-    auto* first =
-        static_cast<item_type*>(static_cast<void*>(std::data(message)));
-    auto count = std::size(message) / sizeof(item_type);
+    const std::size_t count = message.size() / sizeof(item_type);
+    std::vector<item_type> items(count);
 
-    return {first, count};
-}
+    // https://en.cppreference.com/w/cpp/string/byte/memcpy 
+    // Where strict aliasing prohibits examining the same memory as values of
+    // two different types, std::memcpy may be used to convert the values.
+    std::memcpy(items.data(), message.data(), message.size());
 
-/// Helper to convert std::string and std::vector<char> to std::span<char>
-template <std::size_t N, typename T>
-std::span<message_view_item<N>> make_message_view(T& message)
-{
-    return make_message_view<N>(
-        std::span<char>(message.data(), message.size()));
+    return items;
 }
 
 /// Returns whether a binary message from the Shadow data service is metadata
