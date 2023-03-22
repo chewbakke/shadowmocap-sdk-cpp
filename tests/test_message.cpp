@@ -49,7 +49,7 @@ TEST_CASE("is_metadata", "[message]")
 
     {
         auto input =
-            "<?xml version=\"1.0\" encoding=\"utf\"?><document></document>";
+            "<?xml version=\"1.0\" encoding=\"utf-8\"?><document></document>";
         auto expected = true;
 
         auto output = is_metadata(input);
@@ -83,7 +83,7 @@ TEST_CASE("parse_metadata", "[message]")
     }
 
     {
-        auto input = "<?xml version=\"1.0\" encoding=\"utf\"?>"
+        auto input = "<?xml version=\"1.0\" encoding=\"utf-8\"?>"
                      "<node id=\"default\" key=\"0\" tracking=\"1\">"
                      "<node id=\"NameZ\" key=\"1\"/>"
                      "<node id=\"NameX\" key=\"2\" active=\"0\"/>"
