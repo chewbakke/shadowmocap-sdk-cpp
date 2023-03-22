@@ -36,8 +36,10 @@ class ShadowmocapRecipe(ConanFile):
         deps.generate()
 
     def build(self):
+        variables = {"ENABLE_BENCHMARKS": self.options.enable_benchmarks}
+
         cmake = CMake(self)
-        cmake.configure()
+        cmake.configure(variables=variables)
         cmake.build()
 
     def package(self):
