@@ -11,7 +11,7 @@ namespace shadowmocap {
 /*
  * Adheres to semantic versioning specification as per https://semver.org/
  */
-constexpr int Version = 400100; // 4.1.0
+constexpr int Version = 400200; // 4.2.0
 
 /// Enables all possible channels
 constexpr int AllChannelMask = 0x0FFFFFFF;
