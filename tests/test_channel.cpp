@@ -31,7 +31,7 @@ TEST_CASE("dimension", "[channel]")
 {
     using namespace shadowmocap;
 
-    for (auto c : ChannelList) {
+    for (auto c : kChannelList) {
         auto dim = get_channel_dimension(c);
 
         REQUIRE((dim == 1 || dim == 3 || dim == 4));
@@ -45,9 +45,9 @@ TEST_CASE("string_names", "[channel]")
 {
     using namespace shadowmocap;
 
-    static_assert(std::size(ChannelList) == 28);
+    static_assert(std::size(kChannelList) == 28);
 
-    for (auto c : ChannelList) {
+    for (auto c : kChannelList) {
         auto name = get_channel_name(c);
 
         REQUIRE(name != nullptr);
@@ -64,7 +64,7 @@ TEST_CASE("mask_dimension", "[channel]")
     using namespace shadowmocap;
 
     int mask = 0;
-    for (auto c : ChannelList) {
+    for (auto c : kChannelList) {
         mask |= c;
     }
 
