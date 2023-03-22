@@ -4,15 +4,11 @@
 #include <shadowmocap/message.hpp>
 
 #include <asio/awaitable.hpp>
-#include <asio/buffer.hpp>
 #include <asio/ip/tcp.hpp>
-#include <asio/read.hpp>
-#include <asio/ts/net.hpp>
 #include <asio/use_awaitable.hpp>
-#include <asio/write.hpp>
 
+#include <algorithm>
 #include <chrono>
-#include <exception>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -21,52 +17,22 @@ namespace shadowmocap {
 
 using tcp = asio::ip::tcp;
 
-constexpr auto MinMessageLength = 1;
-constexpr auto MaxMessageLength = 1 << 16;
-
-template <typename Protocol>
 struct datastream {
-    typename Protocol::socket socket_;
+    tcp::socket socket_;
     std::vector<std::string> names_;
-}; // struct datastream
+};
 
-template <typename Message>
-asio::awaitable<Message> read_message(tcp::socket& socket)
-{
-    static_assert(
-        sizeof(typename Message::value_type) == sizeof(char),
-        "message is not bytes");
+/**
+ * Read a binary message with its length header from the stream.
+ */
+asio::awaitable<std::string> read_message(tcp::socket& socket);
 
-    unsigned length = 0;
-    co_await asio::async_read(
-        socket, asio::buffer(&length, sizeof(length)), asio::use_awaitable);
-
-    length = ntohl(length);
-    if ((length < MinMessageLength) || (length > MaxMessageLength)) {
-        throw std::length_error("message length is not valid");
-    }
-
-    Message message(length, 0);
-
-    co_await asio::async_read(
-        socket, asio::buffer(message), asio::use_awaitable);
-
-    co_return message;
-}
-
-template <typename Message>
-asio::awaitable<Message> read_message(datastream<tcp>& stream)
-{
-    auto message = co_await read_message<Message>(stream.socket_);
-
-    if (is_metadata(message)) {
-        stream.names_ = parse_metadata(message);
-
-        message = co_await read_message<Message>(stream.socket_);
-    }
-
-    co_return message;
-}
+/*
+ * Read one binary message from the stream. Will read two messages if it detects
+ * a metadata message which indicates a change in the name list. The protocol
+ * dictates that two metadata messages are not sent in sequential order.
+ */
+asio::awaitable<std::string> read_message(datastream& stream);
 
 /**
  * Write a binary message with its length header to the stream.
@@ -75,9 +41,9 @@ asio::awaitable<void>
 write_message(tcp::socket& socket, std::string_view message);
 
 asio::awaitable<void>
-write_message(datastream<tcp>& stream, std::string_view message);
+write_message(datastream& stream, std::string_view message);
 
-asio::awaitable<datastream<tcp>> open_connection(tcp::endpoint endpoint);
+asio::awaitable<datastream> open_connection(tcp::endpoint endpoint);
 
 /**
  * From Chris Kohlhoff talk "Talking Async Ep1: Why C++20 is the Awesomest
