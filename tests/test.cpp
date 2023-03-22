@@ -16,19 +16,19 @@
 using tcp = shadowmocap::tcp;
 
 asio::awaitable<void> read_shadowmocap_datastream_frames(
-    shadowmocap::datastream<tcp> stream,
+    shadowmocap::datastream stream,
     std::chrono::steady_clock::time_point& deadline)
 {
     using namespace shadowmocap;
     using namespace std::chrono_literals;
 
-    constexpr auto Mask = channel::Lq | channel::c;
-    constexpr auto ItemSize = get_channel_mask_dimension(Mask);
+    constexpr auto kMask = channel::Lq | channel::c;
+    constexpr auto kItemSize = get_channel_mask_dimension(kMask);
 
     {
         // Create an XML string that lists the channels we want in order.
         // <configurable><Lq/><c/></configurable>
-        const auto message = make_channel_message(Mask);
+        const auto message = make_channel_message(kMask);
 
         co_await write_message(stream, message);
     }
@@ -39,10 +39,12 @@ asio::awaitable<void> read_shadowmocap_datastream_frames(
     for (int i = 0; i < 100; ++i) {
         extend_deadline_for(deadline, 1s);
 
-        auto message = co_await read_message<std::string>(stream);
-        num_bytes += std::size(message);
+        auto message = co_await read_message(stream);
+        REQUIRE(!message.empty());
 
-        const auto num_item = std::size(stream.names_);
+        num_bytes += message.size();
+
+        const auto num_item = stream.names_.size();
 
         REQUIRE(num_item > 0);
 
@@ -50,29 +52,21 @@ asio::awaitable<void> read_shadowmocap_datastream_frames(
             throw std::length_error("name map must not be empty");
         }
 
-        REQUIRE(std::size(message) == num_item * (2 + ItemSize) * 4);
+        REQUIRE(std::size(message) == num_item * (2 + kItemSize) * 4);
 
-        if (std::size(message) != num_item * (2 + ItemSize) * 4) {
+        if (message.size() != num_item * (2 + kItemSize) * 4) {
             throw std::runtime_error("message size mismatch");
         }
 
-        auto view = shadowmocap::make_message_view<ItemSize>(message);
+        auto items = shadowmocap::make_message_list<kItemSize>(message);
 
-        REQUIRE(std::size(view) == num_item);
+        REQUIRE(items.size() == num_item);
 
-        if (num_item != std::size(view)) {
-            throw std::length_error("message item count mismatch");
-        }
+        for (const auto& item : items) {
+            REQUIRE(item.length == kItemSize);
 
-        for (auto& item : view) {
-            REQUIRE(item.length == ItemSize);
-
-            if (item.length != ItemSize) {
-                throw std::length_error("message item channel size mismatch");
-            }
-
-            std::cout << "key=" << item.key << ", len=" << item.length
-                      << ", data=[";
+            std::cout << "{\"key\": " << item.key
+                      << ", \"length\": " << item.length << ", \"data\": [";
 
             std::copy(
                 std::begin(item.data), std::end(item.data),
@@ -107,15 +101,15 @@ asio::awaitable<void> read_shadowmocap_datastream(tcp::endpoint endpoint)
 bool run()
 {
     try {
-        constexpr std::string_view host = "127.0.0.1";
-        constexpr std::string_view service = "32076";
+        constexpr std::string_view kHost = "127.0.0.1";
+        constexpr std::string_view kService = "32076";
 
-        asio::io_context ctx;
+        asio::io_context ioc;
 
-        auto endpoint = *tcp::resolver(ctx).resolve(host, service);
+        auto endpoint = *tcp::resolver(ioc).resolve(kHost, kService);
 
         co_spawn(
-            ctx, read_shadowmocap_datastream(std::move(endpoint)),
+            ioc, read_shadowmocap_datastream(std::move(endpoint)),
             [](auto ptr) {
                 // Propagate exception from the coroutine
                 if (ptr) {
@@ -123,7 +117,7 @@ bool run()
                 }
             });
 
-        ctx.run();
+        ioc.run();
 
         return true;
     } catch (std::exception& e) {

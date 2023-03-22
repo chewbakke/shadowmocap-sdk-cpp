@@ -2,42 +2,42 @@
 
 #include <catch2/catch_test_macros.hpp>
 
-TEST_CASE("make_message_view", "[message]")
+TEST_CASE("make_message_list", "[message]")
 {
     using namespace shadowmocap;
 
     {
-        using item_type = message_view_item<8>;
+        using item_type = message_list_item<8>;
 
         auto input = std::vector<char>(10 * sizeof(item_type));
-        auto output = make_message_view<8>(input);
+        auto output = make_message_list<8>(std::string_view{input.data(), input.size()});
 
         CHECK(std::size(output) == 10);
     }
 
     {
-        using item_type = message_view_item<4>;
+        using item_type = message_list_item<4>;
 
         auto input = std::string(5 * sizeof(item_type), 0);
-        auto output = make_message_view<4>(input);
+        auto output = make_message_list<4>(input);
 
         CHECK(std::size(output) == 5);
     }
 
     {
-        using item_type = message_view_item<10>;
+        using item_type = message_list_item<10>;
 
         auto input = std::string(sizeof(item_type) + 1, 0);
-        auto output = make_message_view<10>(input);
+        auto output = make_message_list<10>(input);
 
         CHECK(std::size(output) == 0);
     }
 
     {
-        using item_type = message_view_item<1>;
+        using item_type = message_list_item<1>;
 
         auto input = std::string();
-        auto output = make_message_view<1>(input);
+        auto output = make_message_list<1>(input);
 
         CHECK(std::size(output) == 0);
     }
