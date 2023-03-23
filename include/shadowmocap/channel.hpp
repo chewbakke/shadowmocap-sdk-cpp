@@ -11,10 +11,10 @@ namespace shadowmocap {
 /*
  * Adheres to semantic versioning specification as per https://semver.org/
  */
-constexpr int Version = 400100; // 4.1.0
+constexpr int kVersion = 400200; // 4.2.0
 
 /// Enables all possible channels
-constexpr int AllChannelMask = 0x0FFFFFFF;
+constexpr int kAllChannelMask = 0x0FFFFFFF;
 
 /// Enumerate all possible measurements that are associated with one data node
 /**
@@ -52,10 +52,10 @@ enum class channel : int {
     atm = 1 << 25,
     elev = 1 << 26,
     Bq = 1 << 27
-}; // enum class channel
+};
 
 // Iterable list of all channels
-constexpr auto ChannelList = {
+constexpr auto kChannelList = {
     channel::Gq, channel::Gdq,       channel::Lq,      channel::r,
     channel::la, channel::lv,        channel::lt,      channel::c,
     channel::a,  channel::m,         channel::g,       channel::temp,
@@ -64,7 +64,7 @@ constexpr auto ChannelList = {
     channel::em, channel::eg,        channel::eq,      channel::ec,
     channel::p,  channel::atm,       channel::elev,    channel::Bq};
 
-constexpr auto NumChannel = std::size(ChannelList);
+constexpr auto kNumChannel = std::size(kChannelList);
 
 /// Test a channel against a bitmask value
 /**
@@ -236,7 +236,7 @@ constexpr int get_channel_mask_dimension(int mask)
 {
     int result = 0;
 
-    for (auto c : ChannelList) {
+    for (auto c : kChannelList) {
         if (mask & c) {
             result += get_channel_dimension(c);
         }
@@ -248,7 +248,7 @@ constexpr int get_channel_mask_dimension(int mask)
 /// Get the bitmask that activates all possible channels.
 constexpr int get_all_channel_mask()
 {
-    return AllChannelMask;
+    return kAllChannelMask;
 }
 
 } // namespace shadowmocap

@@ -6,6 +6,7 @@
 #include <asio/io_context.hpp>
 #include <asio/ip/tcp.hpp>
 #include <asio/stream_file.hpp>
+#include <asio/write.hpp>
 
 #include <chrono>
 #include <exception>
@@ -67,7 +68,7 @@ struct command_line_options {
 };
 
 asio::awaitable<void> read_shadowmocap_datastream_frames(
-    command_line_options options, shadowmocap::datastream<tcp> stream,
+    command_line_options options, shadowmocap::datastream stream,
     std::chrono::steady_clock::time_point& deadline)
 {
     using namespace shadowmocap;
@@ -89,7 +90,7 @@ asio::awaitable<void> read_shadowmocap_datastream_frames(
     for (;;) {
         extend_deadline_for(deadline, 1s);
 
-        auto message = co_await read_message<std::string>(stream);
+        auto message = co_await read_message(stream);
 
         int column = 0;
 
@@ -133,7 +134,7 @@ asio::awaitable<void> read_shadowmocap_datastream_frames(
             stream.names_.clear();
         }
 
-        auto view = make_message_view<ItemSize>(message);
+        auto view = make_message_list<ItemSize>(message);
         for (auto& item : view) {
             for (auto& value : item.data) {
                 if (column++ > 0) {

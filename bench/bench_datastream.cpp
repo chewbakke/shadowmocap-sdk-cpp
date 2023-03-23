@@ -10,8 +10,6 @@ asio::awaitable<void>
 server(asio::ip::tcp::endpoint endpoint, std::size_t num_bytes)
 {
     using namespace shadowmocap;
-    using namespace std::literals::chrono_literals;
-    using asio::experimental::as_tuple;
 
     tcp::acceptor acceptor{co_await asio::this_coro::executor, endpoint};
     for (;;) {
@@ -32,7 +30,7 @@ client(asio::ip::tcp::endpoint endpoint, std::size_t num_frame)
 
     auto stream = co_await open_connection(endpoint);
     for (std::size_t i = 0; i < num_frame; ++i) {
-        auto message = co_await read_message<std::string>(stream);
+        auto message = co_await read_message(stream);
     }
 }
 
@@ -48,24 +46,24 @@ void BM_DataStream(benchmark::State& state)
 {
     using tcp = shadowmocap::tcp;
 
-    constexpr std::string_view Host = "127.0.0.1";
-    constexpr std::string_view Service = "32081";
+    constexpr std::string_view kHost = "127.0.0.1";
+    constexpr std::string_view kService = "32081";
 
-    asio::io_context ctx;
+    asio::io_context ioc;
 
     const auto endpoint =
-        *tcp::resolver(ctx).resolve(Host, Service, tcp::resolver::passive);
+        *tcp::resolver(ioc).resolve(kHost, kService, tcp::resolver::passive);
 
     for (auto _ : state) {
         co_spawn(
-            ctx, run(endpoint, state.range(0), state.range(1)), [](auto ptr) {
+            ioc, run(endpoint, state.range(0), state.range(1)), [](auto ptr) {
                 // Propagate exception from the coroutine
                 if (ptr) {
                     std::rethrow_exception(ptr);
                 }
             });
 
-        ctx.run();
+        ioc.run();
     }
 
     state.SetComplexityN(state.range(0) * state.range(1));

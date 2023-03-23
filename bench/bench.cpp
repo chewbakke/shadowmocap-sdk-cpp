@@ -10,7 +10,7 @@ std::vector<int> make_random_masks(std::size_t n)
     std::random_device rd;
     std::mt19937 gen(rd());
 
-    std::uniform_int_distribution<int> dis(1, shadowmocap::AllChannelMask);
+    std::uniform_int_distribution<int> dis(1, shadowmocap::kAllChannelMask);
 
     std::vector<int> buf(n);
     std::generate(std::begin(buf), std::end(buf), [&]() { return dis(gen); });
